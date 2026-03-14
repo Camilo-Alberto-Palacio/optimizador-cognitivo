@@ -1,0 +1,48 @@
+@startuml Architecture
+skinparam componentStyle rectangle
+
+package "Capa de UI (React Components)" {
+  [App Orchestrator] as App
+  [ControlPanel] as Control
+  [MasterChart] as Chart
+  [HeaderStats] as Stats
+  [WarningAlerts] as Alerts
+}
+
+package "Capa de Estado (Zustand Global)" {
+  [useEngineStore] as Store << Zustand >>
+}
+
+package "Motor de Lógica (Domain)" {
+  [Pharmacokinetics Engine] as CalcEngine << Pure JS >>
+  [Rules & Interactions] as RulesEngine << Pure JS >>
+}
+
+package "Futuro V2 (Servicios API)" as Future {
+  [Supabase Auth & DB] as DB
+  [Google Fit API] as GFit
+}
+
+' Relaciones UI a Zustand
+App --> Control
+App --> Chart
+App --> Stats
+App --> Alerts
+
+Store -.-> Control : Lee Estado
+Store -.-> Chart : Lee Puntos IQ
+Store -.-> Stats : Lee Baseline
+Control -.-> Store : Despacha Action \n(toggleSupp)
+
+' Relaciones Zustand a Motor
+Store -down-> CalcEngine : Inyecta estado actual
+CalcEngine -up-> Store : Retorna matriz matemática (curva)
+
+Store -down-> RulesEngine : Pide validación de combos
+RulesEngine -up-> Store : Retorna Alertas / Warnings
+
+' Relaciones a V2
+DB -.-> Store : Sincroniza Perfil/Historial
+GFit -.-> Store : Inyecta Baseline (Sueño Real)
+
+@enduml

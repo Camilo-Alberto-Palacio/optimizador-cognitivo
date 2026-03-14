@@ -1,0 +1,66 @@
+@startuml StateStructure
+skinparam class {
+    BackgroundColor White
+    ArrowColor #3b82f6
+    BorderColor #1e293b
+}
+
+title Estructura del Estado Global (Zustand)
+
+class "useEngineStore" as Store {
+    + activeSupps : Object
+    + chartData : Array
+    + warnings : Array
+    + userSettings : Object
+    --
+    + toggleSupplement(id: String)
+    + updateSettings(newSettings: Object)
+    - recalculateEngine()
+}
+
+class "activeSupps (Object)" as Supps {
+    .. Upgrades Premium ..
+    + citicolina : boolean
+    + rhodiola : boolean
+    + flowState : boolean
+    .. Magnesio Triple ..
+    + magManana : boolean
+    + magTarde : boolean
+    + magNoche : boolean
+    .. Cafeína ..
+    + cafe9am : boolean
+    + cafe11am : boolean
+    + cafe2pm : boolean
+    + matcha : boolean
+    .. Nutrición Básica ..
+    + huevosManana : boolean
+    + cocoaManana : boolean
+    + curcuma : boolean
+    ... (etc) ...
+}
+
+class "chartData (Array of Objects)" as ChartData {
+    + time : String (Ej. "08:30")
+    + natural : Number
+    + optimized : Number
+    + iq : Number
+    + flow : boolean
+}
+
+class "warnings (Array of Strings)" as Warnings {
+    + "Riesgo Hipoglucemia (Cúrcuma+Rhodiola)"
+    + "Riesgo Renal (Altas dosis Magnesio+Creatina)"
+}
+
+class "userSettings (V2 - Futuro)" as Settings {
+    + baseIQ : Number = 133
+    + targetIQ : Number = 145
+    + syncGoogleFit : boolean = false
+}
+
+Store *-- Supps : Contiene
+Store *-- ChartData : Calcula
+Store *-- Warnings : Evalúa
+Store *-- Settings : Administra
+
+@enduml

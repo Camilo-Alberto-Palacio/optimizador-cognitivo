@@ -1,0 +1,33 @@
+@startuml DataFlow
+skinparam defaultTextAlignment center
+
+actor "Usuario" as User
+participant "Control Panel\n(React UI)" as UI
+entity "Zustand Store\n(useEngineStore)" as Store
+entity "Pharmacokinetics Engine\n(/src/engine)" as Engine
+participant "Master Chart\n(Recharts)" as Chart
+
+User -> UI : Click "Activar Citicolina"
+
+UI -> Store : toggleSupplement('citicolina')
+
+activate Store
+Store -> Store : Muta Estado Interno\n{citicolina: true}
+
+note over Store, Engine : Llama al motor de cálculo asíncrono puro
+
+Store -> Engine : calculateDailyCurve(activeSupps)
+activate Engine
+Engine -> Engine : Calcula curvas \n exponenciales / trigonométricas
+Engine -->> Store : Retorna array de \n [ {time, natural, optimized, iq} ]
+deactivate Engine
+
+Store -> Store : Actualiza la variable 'chartData'
+deactivate Store
+
+Store -->> Chart : Reactivity Update (Estado nuevo)
+activate Chart
+Chart -> Chart : Re-dibuja el área suavizada de Recharts
+Chart -->> User : Muestra IQ Máximo proyectado en la UI
+deactivate Chart
+@enduml
