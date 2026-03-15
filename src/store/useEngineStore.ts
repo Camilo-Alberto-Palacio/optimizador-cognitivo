@@ -69,15 +69,18 @@ export const useEngineStore = create<EngineState>()(
       },
 
       loadFitnessData: async () => {
-        const { fitAccessToken, baseIq } = get();
+        const { fitAccessToken, baseIq, selectedDate } = get();
         if (!fitAccessToken) return;
-        const data = await fetchFitnessData(fitAccessToken);
+        
+        // Fetch data for the specific day being viewed
+        const data = await fetchFitnessData(fitAccessToken, selectedDate);
         set({ fitnessData: data });
+        
         // If we have sleep data, recalculate with adjusted IQ
         if (data.sleepHours !== null && baseIq) {
           const adjustedIq = calculateFitnessImpact(data, baseIq);
           get().recalculate();
-          console.log(`Fitness IQ adjustment: ${baseIq} → ${adjustedIq} (sleep: ${data.sleepHours}h, HR: ${data.restingHeartRate}bpm)`);
+          console.log(`Fitness IQ adjustment for ${selectedDate}: ${baseIq} → ${adjustedIq} (sleep: ${data.sleepHours}h, HR: ${data.restingHeartRate}bpm)`);
         }
       },
 
@@ -159,6 +162,10 @@ export const useEngineStore = create<EngineState>()(
       setSelectedDate: (date: string) => {
         set({ selectedDate: date });
         get().recalculate();
+        // Refresh fitness data if we have a token
+        if (get().fitAccessToken) {
+          get().loadFitnessData();
+        }
       },
 
       addLog: (supplementId: string, timeStr: string, quantity: number = 1, note?: string) => {

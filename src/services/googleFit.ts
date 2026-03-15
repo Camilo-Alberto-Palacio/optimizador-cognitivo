@@ -8,25 +8,29 @@ export interface FitnessData {
 
 const FITNESS_BASE = 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate';
 
-// Construye los milisegundos del inicio y fin de "ayer" (00:00 - 23:59)
-const getYesterdayRange = () => {
-  const end = new Date();
-  end.setHours(0, 0, 0, 0);
-  const start = new Date(end);
-  start.setDate(start.getDate() - 1);
+// Construye los milisegundos del inicio y fin de un día específico (00:00 - 23:59)
+const getDayRange = (dateStr: string) => {
+  const start = new Date(dateStr + 'T00:00:00');
+  const end = new Date(dateStr + 'T23:59:59');
   return {
     startMs: start.getTime(),
     endMs: end.getTime(),
   };
 };
 
-// Construye los milisegundos del inicio y fin de "hoy" (00:00 - ahora)
-const getTodayRange = () => {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
+// Construye un rango para capturar el sueño de la noche anterior (18:00 día anterior - 12:00 día actual)
+const getNightSleepRange = (dateStr: string) => {
+  const currentDay = new Date(dateStr + 'T00:00:00');
+  const start = new Date(currentDay);
+  start.setDate(start.getDate() - 1);
+  start.setHours(18, 0, 0, 0);
+  
+  const end = new Date(currentDay);
+  end.setHours(12, 0, 0, 0);
+  
   return {
     startMs: start.getTime(),
-    endMs: Date.now(),
+    endMs: end.getTime(),
   };
 };
 
@@ -55,17 +59,20 @@ const fetchAggregate = async (token: string, dataTypeName: string, startMs: numb
   return rawData;
 };
 
-export const fetchFitnessData = async (accessToken: string): Promise<FitnessData> => {
-  const { startMs: todayStart, endMs: todayEnd } = getTodayRange();
-  const { startMs: yestStart, endMs: yestEnd } = getYesterdayRange();
+export const fetchFitnessData = async (accessToken: string, targetDate: string): Promise<FitnessData> => {
+  const { startMs: dayStart, endMs: dayEnd } = getDayRange(targetDate);
+  const { startMs: sleepStart, endMs: sleepEnd } = getNightSleepRange(targetDate);
+
+  console.log(`Fetching Fit for ${targetDate}. Range: ${new Date(dayStart).toLocaleString()} - ${new Date(dayEnd).toLocaleString()}`);
 
   try {
     const [sleepRes, hrRes, stepsRes, calRes] = await Promise.all([
-      fetchAggregate(accessToken, 'com.google.sleep.segment', yestStart, yestEnd),
-      fetchAggregate(accessToken, 'com.google.heart_rate.summary', yestStart, todayEnd),
-      fetchAggregate(accessToken, 'com.google.step_count.delta', todayStart, todayEnd),
-      fetchAggregate(accessToken, 'com.google.calories.expended', todayStart, todayEnd),
+      fetchAggregate(accessToken, 'com.google.sleep.segment', sleepStart, sleepEnd),
+      fetchAggregate(accessToken, 'com.google.heart_rate.summary', dayStart, dayEnd),
+      fetchAggregate(accessToken, 'com.google.step_count.delta', dayStart, dayEnd),
+      fetchAggregate(accessToken, 'com.google.calories.expended', dayStart, dayEnd),
     ]);
+
 
     // --- PARSEO DE SUEÑO ---
     let sleepHours: number | null = null;
