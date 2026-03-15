@@ -1,25 +1,34 @@
 import React, { useState } from 'react';
 import { Brain, Sparkles, Activity } from 'lucide-react';
-import { loginWithGoogle } from '../services/firebase';
+import { loginWithGoogle, getGoogleCredential } from '../services/firebase';
+import { useEngineStore } from '../store/useEngineStore';
 
 export const LoginScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { setFitToken, loadFitnessData } = useEngineStore();
 
   const handleLogin = async () => {
     try {
       setLoading(true);
       setError(null);
-      await loginWithGoogle();
+      const result = await loginWithGoogle();
+      // Extraer el access token del proveedor de Google para llamar a Fitness API
+      const credential = getGoogleCredential(result);
+      if (credential?.accessToken) {
+        setFitToken(credential.accessToken);
+        // Cargar datos de Fit en background sin bloquear la UI
+        setTimeout(() => loadFitnessData(), 1500);
+      }
       // El estado se actualizará automáticamente por el observador onAuthStateChanged en App.tsx
     } catch (err: any) {
       console.error("Firebase Auth Error:", err);
-      // Extraemos el mensaje real de Firebase si existe, sino un mensaje genérico
       const errorMessage = err?.message || 'Hubo un error al iniciar sesión. Inténtalo de nuevo.';
       setError(`Error: ${errorMessage}`);
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-slate-800 relative overflow-hidden">

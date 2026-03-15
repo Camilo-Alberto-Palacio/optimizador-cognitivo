@@ -9,6 +9,7 @@ import FooterAnalysis from './components/FooterAnalysis';
 import WarningAlerts from './components/ui/WarningAlerts';
 import LoginScreen from './components/LoginScreen';
 import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
+import FitnessPanel from './components/FitnessPanel';
 
 const App: React.FC = () => {
   const { user, authLoading, setUser } = useEngineStore();
@@ -47,7 +48,10 @@ const App: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <MasterChart />
-          <ControlPanel />
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <FitnessPanel />
+            <ControlPanel />
+          </div>
         </div>
 
         <FooterAnalysis />

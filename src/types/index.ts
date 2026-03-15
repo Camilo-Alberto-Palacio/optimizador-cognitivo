@@ -38,3 +38,11 @@ export interface Warning {
     severity: 'high' | 'medium' | 'low';
     suggestion?: string;
 }
+
+export interface FitnessData {
+    sleepHours: number | null;
+    restingHeartRate: number | null;
+    steps: number | null;
+    activeCalories: number | null;
+    lastFetched: number | null;
+}

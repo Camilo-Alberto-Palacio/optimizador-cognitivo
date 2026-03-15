@@ -21,14 +21,19 @@ export const auth = getAuth(app);
 // Inicializamos la Base de Datos
 export const db = getFirestore(app);
 
-// Configuramos el Proveedor de Google
+// Configuramos el Proveedor de Google con scopes de Fitness
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
+// Scopes de Google Fit para datos de salud
+googleProvider.addScope('https://www.googleapis.com/auth/fitness.activity.read');
+googleProvider.addScope('https://www.googleapis.com/auth/fitness.sleep.read');
+googleProvider.addScope('https://www.googleapis.com/auth/fitness.heart_rate.read');
 
 // Funciones de conveniencia para exportar y usar en los componentes
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
+export const getGoogleCredential = GoogleAuthProvider.credentialFromResult;
 export const logoutFromFirebase = () => signOut(auth);
 
 export default app;

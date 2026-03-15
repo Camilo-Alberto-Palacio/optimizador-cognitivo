@@ -3,9 +3,10 @@ import { persist } from 'zustand/middleware';
 import { User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../services/firebase';
-import { ChartDataPoint, Warning, LogEvent } from '../types';
+import { ChartDataPoint, Warning, LogEvent, FitnessData } from '../types';
 import MathEngine from '../engine/calculator';
 import { evaluateInteractions } from '../engine/rules';
+import { fetchFitnessData, calculateFitnessImpact } from '../services/googleFit';
 
 // Helper to get today's date as YYYY-MM-DD
 export const getTodayStr = (): string => {
@@ -28,6 +29,11 @@ interface EngineState {
   user: User | null;
   authLoading: boolean;
   setUser: (user: User | null) => void;
+  // Google Fit
+  fitAccessToken: string | null;
+  fitnessData: FitnessData | null;
+  setFitToken: (token: string) => void;
+  loadFitnessData: () => Promise<void>;
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
@@ -54,6 +60,26 @@ export const useEngineStore = create<EngineState>()(
 
       user: null,
       authLoading: true,
+
+      fitAccessToken: null,
+      fitnessData: null,
+
+      setFitToken: (token: string) => {
+        set({ fitAccessToken: token });
+      },
+
+      loadFitnessData: async () => {
+        const { fitAccessToken, baseIq } = get();
+        if (!fitAccessToken) return;
+        const data = await fetchFitnessData(fitAccessToken);
+        set({ fitnessData: data });
+        // If we have sleep data, recalculate with adjusted IQ
+        if (data.sleepHours !== null && baseIq) {
+          const adjustedIq = calculateFitnessImpact(data, baseIq);
+          get().recalculate();
+          console.log(`Fitness IQ adjustment: ${baseIq} → ${adjustedIq} (sleep: ${data.sleepHours}h, HR: ${data.restingHeartRate}bpm)`);
+        }
+      },
 
       getLogsForDate: (date: string) => {
         return get().allLogs[date] || [];
