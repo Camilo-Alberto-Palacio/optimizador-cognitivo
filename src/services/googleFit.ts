@@ -50,7 +50,9 @@ const fetchAggregate = async (token: string, dataTypeName: string, startMs: numb
     console.error(`Fitness API error [${dataTypeName}]:`, err);
     return null;
   }
-  return response.json();
+  const rawData = await response.json();
+  console.log(`Fitness Raw [${dataTypeName}]:`, rawData);
+  return rawData;
 };
 
 export const fetchFitnessData = async (accessToken: string): Promise<FitnessData> => {
@@ -106,7 +108,9 @@ export const fetchFitnessData = async (accessToken: string): Promise<FitnessData
       }, 0));
     }
 
-    return { sleepHours, restingHeartRate, steps, activeCalories, lastFetched: Date.now() };
+    const result = { sleepHours, restingHeartRate, steps, activeCalories, lastFetched: Date.now() };
+    console.log("Fitness Parsed Results:", result);
+    return result;
   } catch (error) {
     console.error('Error fetching Google Fit data:', error);
     return { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: null };

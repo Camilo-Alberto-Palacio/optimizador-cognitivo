@@ -1,16 +1,28 @@
 import React from 'react';
-import { Activity, LogOut, RefreshCw } from 'lucide-react';
+import { Activity, LogOut, RefreshCw, ChevronLeft, ChevronRight, Calendar, Info } from 'lucide-react';
 import { useEngineStore } from '../store/useEngineStore';
 import { logoutFromFirebase } from '../services/firebase';
 
 const HeaderStats: React.FC = () => {
-    const chartData = useEngineStore((state) => state.chartData);
-    const user = useEngineStore((state) => state.user);
-    const baseIq = useEngineStore((state) => state.baseIq) || 100;
-    const resetAssessment = useEngineStore((state) => state.resetAssessment);
+    const { chartData, user, baseIq, resetAssessment, selectedDate, setSelectedDate } = useEngineStore();
+    
+    const today = new Date().toISOString().split('T')[0];
+
+    const navigateDate = (direction: 'prev' | 'next') => {
+        const d = new Date(selectedDate + 'T12:00:00');
+        d.setDate(d.getDate() + (direction === 'next' ? 1 : -1));
+        const newDate = d.toISOString().split('T')[0];
+        setSelectedDate(newDate);
+    };
+
+    const formatDisplayDate = (dateStr: string): string => {
+        if (dateStr === today) return 'Hoy';
+        const d = new Date(dateStr + 'T12:00:00');
+        return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    };
     
     // Calcula el IQ máximo que se alcanza en el día para mostrar en el "Peak IQ"
-    const maxIq = chartData.reduce((max, point) => point.iq > max ? point.iq : max, baseIq);
+    const maxIq = chartData.reduce((max, point) => point.iq > max ? point.iq : max, baseIq || 100);
 
     return (
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-6">
@@ -25,13 +37,48 @@ const HeaderStats: React.FC = () => {
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end w-full lg:w-auto">
+                {/* DATE SELECTOR */}
+                <div className="bg-white shadow-xl shadow-slate-200/50 p-2 px-4 rounded-3xl border border-slate-200 flex items-center gap-4 h-[68px]">
+                    <button 
+                        onClick={() => navigateDate('prev')}
+                        className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <div className="text-center min-w-[100px]">
+                        <p className="text-[8px] text-slate-400 font-black uppercase flex items-center justify-center gap-1">
+                            <Calendar size={10} /> {selectedDate === today ? 'Fecha Actual' : 'Historial'}
+                        </p>
+                        <p className="text-sm font-black text-slate-800 capitalize leading-tight">
+                            {formatDisplayDate(selectedDate)}
+                        </p>
+                        {selectedDate !== today && (
+                            <button onClick={() => setSelectedDate(today)} className="text-[9px] text-indigo-500 font-bold hover:underline">
+                                Regresar
+                            </button>
+                        )}
+                    </div>
+                    <button 
+                        onClick={() => navigateDate('next')}
+                        disabled={selectedDate >= today}
+                        className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all disabled:opacity-20"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
+                </div>
+
                 <div className="flex gap-3">
-                    <div className="bg-white shadow-xl shadow-slate-200/50 p-4 rounded-3xl border border-slate-200 text-center min-w-[100px]">
+                    <div className="bg-white shadow-xl shadow-slate-200/50 p-4 rounded-3xl border border-slate-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center">
                         <p className="text-[8px] text-slate-400 font-black uppercase mb-1">Tu CI Base</p>
                         <p className="text-xl md:text-2xl font-black text-slate-800">{baseIq}</p>
                     </div>
-                    <div className="bg-indigo-50 shadow-xl shadow-indigo-200/50 p-4 rounded-3xl border border-indigo-200 text-center min-w-[100px]">
-                        <p className="text-[8px] text-indigo-500 font-black uppercase mb-1">Peak Hoy</p>
+                    <div className="group relative bg-indigo-50 shadow-xl shadow-indigo-200/50 p-4 rounded-3xl border border-indigo-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center cursor-help">
+                        {/* Tooltip explanation for PEAK */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
+                            <p className="font-black text-indigo-300 uppercase mb-1 flex items-center gap-1"><Info size={10}/> ¿Qué es el PEAK?</p>
+                            Es el punto máximo de potencial cognitivo que el motor proyecta para este día, basado en tus suplementos, horas de sueño y bio-datos actuales.
+                        </div>
+                        <p className="text-[8px] text-indigo-500 font-black uppercase mb-1">Peak Estimado</p>
                         <p className="text-xl md:text-2xl font-black text-indigo-700">{maxIq}</p>
                     </div>
                 </div>
