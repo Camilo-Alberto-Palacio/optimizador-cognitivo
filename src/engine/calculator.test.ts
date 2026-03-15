@@ -19,11 +19,11 @@ describe('Pharmacokinetics Math Engine (Event-Based)', () => {
 
     it('should boost IQ dramatically when premium upgrades and Flow State are active', () => {
         const testLogs: LogEvent[] = [
-            { id: '1', supplementId: 'citicolina', timeStr: '13:00', timestamp: 0 },
-            { id: '2', supplementId: 'huevos', timeStr: '08:00', timestamp: 0 },
-            { id: '3', supplementId: 'cocoa', timeStr: '08:30', timestamp: 0 },
-            { id: '4', supplementId: 'cold_plunge', timeStr: '07:00', timestamp: 0 },
-            { id: '5', supplementId: 'rhodiola', timeStr: '09:00', timestamp: 0 }
+            { id: '1', supplementId: 'citicolina', timeStr: '13:00', timestamp: 0, date: '2026-03-15' },
+            { id: '2', supplementId: 'huevos', timeStr: '08:00', timestamp: 0, date: '2026-03-15' },
+            { id: '3', supplementId: 'cocoa', timeStr: '08:30', timestamp: 0, date: '2026-03-15' },
+            { id: '4', supplementId: 'cold_plunge', timeStr: '07:00', timestamp: 0, date: '2026-03-15' },
+            { id: '5', supplementId: 'rhodiola', timeStr: '09:00', timestamp: 0, date: '2026-03-15' }
         ];
 
         const result = MathEngine.calculateDailyPerformance(testLogs, 133);

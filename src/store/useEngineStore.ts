@@ -7,8 +7,17 @@ import { ChartDataPoint, Warning, LogEvent } from '../types';
 import MathEngine from '../engine/calculator';
 import { evaluateInteractions } from '../engine/rules';
 
+// Helper to get today's date as YYYY-MM-DD
+export const getTodayStr = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 interface EngineState {
-  logs: LogEvent[];
+  // Multi-day journal: keyed by 'YYYY-MM-DD'
+  allLogs: Record<string, LogEvent[]>;
+  // The currently viewed date
+  selectedDate: string;
   favorites: string[];
   chartData: ChartDataPoint[];
   warnings: Warning[];
@@ -22,19 +31,22 @@ interface EngineState {
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
-  addLog: (supplementId: string, timeStr: string, quantity?: number) => void;
+  setSelectedDate: (date: string) => void;
+  addLog: (supplementId: string, timeStr: string, quantity?: number, note?: string) => void;
   removeLog: (id: string) => void;
   toggleFavorite: (supplementId: string) => void;
   recalculate: () => void;
+  // Derived helpers
+  getLogsForDate: (date: string) => LogEvent[];
 }
 
 export const useEngineStore = create<EngineState>()(
   persist(
     (set, get) => ({
-      logs: [],
-      favorites: ['creatina', 'magnesio', 'cafe'], // Default favorites
-      // We initialize the chart and warnings immediately on creation
-      chartData: MathEngine.calculateDailyPerformance([], 133), // default 133 will be recalculated when loaded
+      allLogs: {},
+      selectedDate: getTodayStr(),
+      favorites: ['creatina_mono', 'mag_glicinato', 'cafe'],
+      chartData: MathEngine.calculateDailyPerformance([], 133),
       warnings: evaluateInteractions([]),
       
       baseIq: null,
@@ -42,6 +54,10 @@ export const useEngineStore = create<EngineState>()(
 
       user: null,
       authLoading: true,
+
+      getLogsForDate: (date: string) => {
+        return get().allLogs[date] || [];
+      },
 
       setUser: async (user) => {
         set({ user, authLoading: false });
@@ -51,7 +67,7 @@ export const useEngineStore = create<EngineState>()(
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
               const data = docSnap.data();
-              const cloudLogs = data.logs;
+              const cloudAllLogs = data.allLogs;
               const cloudFavorites = data.favorites;
               const cloudBaseIq = data.baseIq;
               
@@ -59,8 +75,8 @@ export const useEngineStore = create<EngineState>()(
                   set({ baseIq: cloudBaseIq, hasCompletedAssessment: cloudBaseIq !== null });
               }
 
-              if (cloudLogs) {
-                set({ logs: cloudLogs });
+              if (cloudAllLogs) {
+                set({ allLogs: cloudAllLogs });
               }
 
               if (cloudFavorites) {
@@ -75,75 +91,91 @@ export const useEngineStore = create<EngineState>()(
         }
       },
 
-  setBaseIq: (iq: number) => {
-      set({ baseIq: iq, hasCompletedAssessment: true });
-      const state = get();
-      if (state.user) {
-          setDoc(doc(db, 'users', state.user.uid), { baseIq: iq }, { merge: true })
-            .catch(err => console.error("Error saving to cloud:", err));
-      }
-      state.recalculate();
-  },
+      setBaseIq: (iq: number) => {
+          set({ baseIq: iq, hasCompletedAssessment: true });
+          const state = get();
+          if (state.user) {
+              setDoc(doc(db, 'users', state.user.uid), { baseIq: iq }, { merge: true })
+                .catch(err => console.error("Error saving to cloud:", err));
+          }
+          state.recalculate();
+      },
 
-  resetAssessment: () => {
-      set({ hasCompletedAssessment: false, baseIq: null });
-  },
+      resetAssessment: () => {
+          set({ hasCompletedAssessment: false, baseIq: null });
+      },
 
-  addLog: (supplementId: string, timeStr: string, quantity: number = 1) => {
-    set((state) => {
-      const newEvent: LogEvent = {
-        id: crypto.randomUUID(), // Usando UUID nativo del navegador
-        supplementId,
-        timeStr,
-        timestamp: Date.now(),
-        quantity
-      };
-      const newLogs = [...state.logs, newEvent];
+      setSelectedDate: (date: string) => {
+        set({ selectedDate: date });
+        get().recalculate();
+      },
 
-      if (state.user) {
-        setDoc(doc(db, 'users', state.user.uid), { logs: newLogs }, { merge: true })
-          .catch(err => console.error("Error saving to cloud:", err));
-      }
-      
-      return { 
-        logs: newLogs,
-        chartData: MathEngine.calculateDailyPerformance(newLogs, state.baseIq || 133),
-        warnings: evaluateInteractions(newLogs)
-      };
-    });
-  },
+      addLog: (supplementId: string, timeStr: string, quantity: number = 1, note?: string) => {
+        set((state) => {
+          const date = state.selectedDate;
+          const newEvent: LogEvent = {
+            id: crypto.randomUUID(),
+            supplementId,
+            date,
+            timeStr,
+            timestamp: Date.now(),
+            quantity,
+            ...(note ? { note } : {})
+          };
+          const todayLogs = state.allLogs[date] || [];
+          const newAllLogs = {
+            ...state.allLogs,
+            [date]: [...todayLogs, newEvent]
+          };
 
-  removeLog: (id: string) => {
-    set((state) => {
-      const newLogs = state.logs.filter(log => log.id !== id);
-      if (state.user) {
-        setDoc(doc(db, 'users', state.user.uid), { logs: newLogs }, { merge: true });
-      }
-      return { 
-        logs: newLogs,
-        chartData: MathEngine.calculateDailyPerformance(newLogs, state.baseIq || 133),
-        warnings: evaluateInteractions(newLogs)
-      };
-    });
-  },
+          if (state.user) {
+            setDoc(doc(db, 'users', state.user.uid), { allLogs: newAllLogs }, { merge: true })
+              .catch(err => console.error("Error saving to cloud:", err));
+          }
+          
+          const logsForSelected = newAllLogs[date] || [];
+          return { 
+            allLogs: newAllLogs,
+            chartData: MathEngine.calculateDailyPerformance(logsForSelected, state.baseIq || 133),
+            warnings: evaluateInteractions(logsForSelected)
+          };
+        });
+      },
 
-  toggleFavorite: (supplementId: string) => {
-    set((state) => {
-      const exists = state.favorites.includes(supplementId);
-      const newFavs = exists 
-        ? state.favorites.filter(f => f !== supplementId)
-        : [...state.favorites, supplementId];
+      removeLog: (id: string) => {
+        set((state) => {
+          const date = state.selectedDate;
+          const newDateLogs = (state.allLogs[date] || []).filter(log => log.id !== id);
+          const newAllLogs = { ...state.allLogs, [date]: newDateLogs };
+          if (state.user) {
+            setDoc(doc(db, 'users', state.user.uid), { allLogs: newAllLogs }, { merge: true });
+          }
+          return { 
+            allLogs: newAllLogs,
+            chartData: MathEngine.calculateDailyPerformance(newDateLogs, state.baseIq || 133),
+            warnings: evaluateInteractions(newDateLogs)
+          };
+        });
+      },
 
-      if (state.user) {
-        setDoc(doc(db, 'users', state.user.uid), { favorites: newFavs }, { merge: true });
-      }
+      toggleFavorite: (supplementId: string) => {
+        set((state) => {
+          const exists = state.favorites.includes(supplementId);
+          const newFavs = exists 
+            ? state.favorites.filter(f => f !== supplementId)
+            : [...state.favorites, supplementId];
 
-      return { favorites: newFavs };
-    });
-  },
+          if (state.user) {
+            setDoc(doc(db, 'users', state.user.uid), { favorites: newFavs }, { merge: true });
+          }
+
+          return { favorites: newFavs };
+        });
+      },
 
       recalculate: () => {
-        const { logs, baseIq } = get();
+        const { allLogs, selectedDate, baseIq } = get();
+        const logs = allLogs[selectedDate] || [];
         set({
           chartData: MathEngine.calculateDailyPerformance(logs, baseIq || 133),
           warnings: evaluateInteractions(logs)
@@ -151,16 +183,18 @@ export const useEngineStore = create<EngineState>()(
       }
     }),
     {
-      name: 'quantum-engine-storage', // name of the item in the storage (must be unique)
+      name: 'quantum-engine-storage-v2', // incremented to avoid stale state
       partialize: (state) => ({ 
-          logs: state.logs,
+          allLogs: state.allLogs,
           favorites: state.favorites,
           baseIq: state.baseIq,
-          hasCompletedAssessment: state.hasCompletedAssessment
+          hasCompletedAssessment: state.hasCompletedAssessment,
+          selectedDate: state.selectedDate
       }), 
       onRehydrateStorage: () => (state) => {
-        // Cuando se recarga la página y saca los botones del localStorage, forzamos que se recalcule la gráfica con esos botones viejos.
         if (state) {
+            // Snap selected date back to today when reloading
+            state.selectedDate = getTodayStr();
             state.recalculate();
         }
       }

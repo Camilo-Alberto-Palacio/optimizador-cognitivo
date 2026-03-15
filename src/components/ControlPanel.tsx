@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Clock, Plus, Star, Search, Activity, Trash2, Hash } from 'lucide-react';
-import { useEngineStore } from '../store/useEngineStore';
+import { Clock, Plus, Star, Search, Activity, Trash2, Hash, ChevronLeft, ChevronRight, BookOpen, FileText } from 'lucide-react';
+import { useEngineStore, getTodayStr } from '../store/useEngineStore';
 import { SUPPLEMENT_CATALOG } from '../data/supplements';
 
 const ControlPanel: React.FC = () => {
-  const { logs, favorites, addLog, removeLog, toggleFavorite } = useEngineStore();
+  const { allLogs, selectedDate, favorites, addLog, removeLog, toggleFavorite, setSelectedDate } = useEngineStore();
+
+  const logs = allLogs[selectedDate] || [];
+  const today = getTodayStr();
+  const isToday = selectedDate === today;
 
   // getCurrentTime helper 'HH:mm'
   const getCurrentTimeStr = () => {
@@ -15,18 +19,37 @@ const ControlPanel: React.FC = () => {
   const [selectedSuppId, setSelectedSuppId] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>(getCurrentTimeStr());
   const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
+  const [note, setNote] = useState<string>('');
   
   // Search Filtering State
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const navigateDate = (direction: 'prev' | 'next') => {
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() + (direction === 'next' ? 1 : -1));
+    const newDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    setSelectedDate(newDate);
+  };
+
+  const formatDisplayDate = (dateStr: string): string => {
+    const d = new Date(dateStr + 'T12:00:00');
+    if (dateStr === today) return 'Hoy';
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    if (dateStr === yStr) return 'Ayer';
+    return d.toLocaleDateString('es-ES', { weekday: 'long', month: 'long', day: 'numeric' });
+  };
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedSuppId && selectedTime && selectedQuantity > 0) {
-      addLog(selectedSuppId, selectedTime, selectedQuantity);
+      addLog(selectedSuppId, selectedTime, selectedQuantity, note || undefined);
       setSelectedSuppId('');
       setSearchTerm('');
       setSelectedQuantity(1);
+      setNote('');
     }
   };
 
@@ -47,9 +70,55 @@ const ControlPanel: React.FC = () => {
   // Safe fetch defs
   const sortedLogs = [...logs].sort((a, b) => a.timeStr.localeCompare(b.timeStr));
 
+  // Calculate journal stats
+  const daysWithLogs = Object.keys(allLogs).filter(d => (allLogs[d] || []).length > 0).sort();
+  const totalLoggedDays = daysWithLogs.length;
+
   return (
     <div className="lg:col-span-4 flex flex-col gap-6">
       
+      {/* DATE NAVIGATOR */}
+      <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigateDate('prev')}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 transition-all active:scale-90"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          
+          <div className="text-center">
+            <p className="text-xs text-slate-400 uppercase tracking-widest font-black mb-0.5">Bitácora</p>
+            <h2 className="text-lg font-black text-slate-800 capitalize">{formatDisplayDate(selectedDate)}</h2>
+            {!isToday && (
+              <button onClick={() => setSelectedDate(today)} className="text-[10px] text-indigo-500 font-bold hover:underline mt-0.5">
+                Volver a Hoy
+              </button>
+            )}
+          </div>
+          
+          <button
+            onClick={() => navigateDate('next')}
+            disabled={selectedDate >= today}
+            className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 transition-all active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+        
+        {/* Quick day stats */}
+        <div className="flex justify-center gap-6 mt-4 pt-4 border-t border-slate-100">
+          <div className="text-center">
+            <p className="text-2xl font-black text-indigo-600">{logs.length}</p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold">Registros</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-black text-emerald-600">{totalLoggedDays}</p>
+            <p className="text-[10px] text-slate-400 uppercase font-bold">Días en Bitácora</p>
+          </div>
+        </div>
+      </div>
+
       {/* 1. FAVORITOS RAPIDOS */}
       <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -102,12 +171,11 @@ const ControlPanel: React.FC = () => {
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
-                    setSelectedSuppId(''); // Reset id if user types freely
+                    setSelectedSuppId('');
                     setIsDropdownOpen(true);
                   }}
                   onFocus={() => setIsDropdownOpen(true)}
                   onBlur={() => {
-                     // small delay to allow onClick on list items to fire
                      setTimeout(() => setIsDropdownOpen(false), 200);
                   }}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
@@ -178,48 +246,67 @@ const ControlPanel: React.FC = () => {
               </div>
            </div>
 
+          {/* Note field */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1">
+              <FileText size={10} /> Nota (Opcional)
+            </label>
+            <input
+              type="text"
+              placeholder="Ej: Tomado con jugo de naranja..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+            />
+          </div>
+
            <button 
              type="submit" 
              disabled={!selectedSuppId}
              className="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all active:scale-95 flex justify-center items-center gap-2"
            >
-             <Plus size={18} /> Registrar en la Línea de Tiempo
+             <Plus size={18} /> Registrar en la Bitácora
            </button>
         </form>
       </div>
 
-      {/* 3. LÍNEA DE TIEMPO (Bitácora) */}
+      {/* 3. LÍNEA DE TIEMPO (Bitácora del Día) */}
       <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200">
-         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">
-           Diario de Hoy ({logs.length})
+         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+           <BookOpen size={14} className="text-slate-400" /> Bitácora del {formatDisplayDate(selectedDate)} ({logs.length})
         </h3>
 
         <div className="flex flex-col gap-2">
            {sortedLogs.length === 0 ? (
-             <div className="text-center py-6 text-slate-400 text-xs font-medium">No has registrado nada el día de hoy.</div>
+             <div className="text-center py-6 text-slate-400 text-xs font-medium">No hay registros para este día.</div>
            ) : (
              sortedLogs.map(log => {
                const def = SUPPLEMENT_CATALOG.find(s => s.id === log.supplementId);
                return (
-                 <div key={log.id} className="bg-white border border-slate-200 rounded-xl p-3 flex justify-between items-center shadow-sm">
-                    <div className="flex items-center gap-3">
-                       <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2 py-1 rounded-md">{log.timeStr}</span>
-                       <div>
-                         <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                           {def?.name || 'Desconocido'} 
-                           {(log.quantity && log.quantity > 1) ? (
-                             <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-md">x{log.quantity}</span>
-                           ) : null}
-                         </p>
-                       </div>
+                 <div key={log.id} className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                         <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2 py-1 rounded-md">{log.timeStr}</span>
+                         <div>
+                           <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                             {def?.name || 'Desconocido'} 
+                             {(log.quantity && log.quantity > 1) ? (
+                               <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-md">x{log.quantity}</span>
+                             ) : null}
+                           </p>
+                         </div>
+                      </div>
+                      <button 
+                        onClick={() => removeLog(log.id)}
+                        className="text-rose-500 bg-rose-50 hover:bg-rose-100 hover:text-rose-600 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold"
+                        title="Eliminar evento"
+                      >
+                        <Trash2 size={14} /> Borrar
+                      </button>
                     </div>
-                    <button 
-                      onClick={() => removeLog(log.id)}
-                      className="text-rose-500 bg-rose-50 hover:bg-rose-100 hover:text-rose-600 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold"
-                      title="Eliminar evento"
-                    >
-                      <Trash2 size={14} /> Borrar
-                    </button>
+                    {log.note && (
+                      <p className="mt-2 ml-14 text-xs text-slate-400 italic border-t border-slate-100 pt-2">💬 {log.note}</p>
+                    )}
                  </div>
                )
              })

@@ -17,8 +17,10 @@ export interface LogEvent {
     id: string; // uuid para poder borrarlo
     supplementId: string; // Referencia al SupplementDef
     timestamp: number;    // epoch time of the event (optional, future proofing)
+    date: string;         // ej: '2026-03-15' (YYYY-MM-DD)
     timeStr: string;      // ej: '14:30', '08:00'
     quantity?: number;    // ej: 2, 3 (multiplicador de dosis)
+    note?: string;        // nota libre opcional
 }
 
 export interface ChartDataPoint {
