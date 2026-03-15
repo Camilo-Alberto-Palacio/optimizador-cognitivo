@@ -119,6 +119,8 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'mandarina', name: 'Mandarina / Cítricos (Vitamina C rápida)', category: 'nutrition', effectK: 3, durationH: 2, macronutrients: { protein: 0, carbs: 12, fats: 0, calories: 50 } },
   { id: 'aguacate', name: 'Aguacate', category: 'nutrition', effectK: 4, durationH: 6, macronutrients: { protein: 3, carbs: 12, fats: 21, calories: 240 } },
   { id: 'nueces', name: 'Nueces / Almendras (1 Puñado)', category: 'nutrition', effectK: 4, durationH: 6, macronutrients: { protein: 6, carbs: 6, fats: 14, calories: 160 } },
+  { id: 'kale', name: 'Kale / Col Rizada', category: 'nutrition', effectK: 4, durationH: 6, macronutrients: { protein: 2, carbs: 6, fats: 0, calories: 33 } },
+  { id: 'chocolate_oscuro', name: 'Chocolate 85%+ Noir', category: 'nutrition', effectK: 6, durationH: 3, macronutrients: { protein: 2, carbs: 12, fats: 12, calories: 155 } },
   { id: 'spirulina', name: 'Spirulina', category: 'nutrition', effectK: 4, durationH: 6 },
   { id: 'chlorella', name: 'Chlorella', category: 'nutrition', effectK: 4, durationH: 6 },
   { id: 'proteina_whey', name: 'Proteína Whey (Suero - 1 Scoop)', category: 'nutrition', effectK: 5, durationH: 4, macronutrients: { protein: 25, carbs: 2, fats: 1, calories: 120 } },
@@ -126,12 +128,30 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   
   // --- ALIMENTOS MACRONUTRICIONALES (COMIDAS) ---
   { id: 'pollo_carne', name: 'Pollo / Carne Magra (100g)', category: 'nutrition', effectK: 2, durationH: 12, macronutrients: { protein: 25, carbs: 0, fats: 5, calories: 150 } },
-  { id: 'pescado', name: 'Pescado Blanco / Salmón (100g)', category: 'nutrition', effectK: 3, durationH: 10, macronutrients: { protein: 20, carbs: 0, fats: 10, calories: 170 } },
+  { id: 'pescado', name: 'Pescado Blanco (100g)', category: 'nutrition', effectK: 3, durationH: 10, macronutrients: { protein: 20, carbs: 0, fats: 2, calories: 100 } },
+  { id: 'salmon', name: 'Salmón Salvaje (100g - Omega 3)', category: 'nutrition', effectK: 8, durationH: 12, macronutrients: { protein: 20, carbs: 0, fats: 13, calories: 200 } },
   { id: 'arroz_blanco', name: 'Arroz Blanco (1 taza)', category: 'nutrition', effectK: 4, durationH: 4, macronutrients: { protein: 4, carbs: 45, fats: 0, calories: 200 } },
+  { id: 'arroz_integral', name: 'Arroz Integral / Quinoa', category: 'nutrition', effectK: 5, durationH: 6, macronutrients: { protein: 6, carbs: 40, fats: 2, calories: 220 } },
   { id: 'avena', name: 'Avena (1 taza cocida)', category: 'nutrition', effectK: 4, durationH: 6, macronutrients: { protein: 5, carbs: 27, fats: 3, calories: 150 } },
   { id: 'brocoli', name: 'Brócoli / Verduras Verdes (1 taza)', category: 'nutrition', effectK: 2, durationH: 4, macronutrients: { protein: 3, carbs: 6, fats: 0, calories: 30 } },
   { id: 'frijoles', name: 'Lentejas / Frijoles (1 taza)', category: 'nutrition', effectK: 3, durationH: 8, macronutrients: { protein: 15, carbs: 40, fats: 1, calories: 230 } },
   { id: 'aceite_oliva', name: 'Aceite de Oliva (1 Cucharada)', category: 'nutrition', effectK: 2, durationH: 8, macronutrients: { protein: 0, carbs: 0, fats: 14, calories: 120 } },
+  { id: 'sardinas', name: 'Sardinas en AOVE (1 lata)', category: 'nutrition', effectK: 8, durationH: 12, macronutrients: { protein: 22, carbs: 0, fats: 11, calories: 190 } },
+  { id: 'nueces_brasil', name: 'Nueces de Brasil (Selenio - 2 u)', category: 'nutrition', effectK: 5, durationH: 24, macronutrients: { protein: 4, carbs: 3, fats: 19, calories: 190 } },
+  { id: 'espinacas', name: 'Espinacas Baby (1 taza)', category: 'nutrition', effectK: 3, durationH: 4, macronutrients: { protein: 1, carbs: 1, fats: 0, calories: 7 } },
+  { id: 'kefir', name: 'Kéfir / Probióticos', category: 'nutrition', effectK: 5, durationH: 12 },
+  { id: 'higado', name: 'Hígado de Res (100g - Vit. A/B12)', category: 'nutrition', effectK: 9, durationH: 24, macronutrients: { protein: 26, carbs: 4, fats: 5, calories: 175 } },
+
+  // --- ALIMENTOS INFLAMATORIOS Y FACTORES NEGATIVOS ---
+  { id: 'azucar_refinada', name: 'Azúcar Refinada / Dulces', category: 'nutrition', effectK: -12, durationH: 3, toxicityScore: 2 },
+  { id: 'comida_chatarra', name: 'Comida Ultra-procesada (Fast Food)', category: 'nutrition', effectK: -15, durationH: 6, toxicityScore: 3 },
+  { id: 'alcohol_destilado', name: 'Alcohol (Destilados)', category: 'other', effectK: -25, durationH: 8, toxicityScore: 4 },
+  { id: 'cerveza', name: 'Cerveza / Vino', category: 'other', effectK: -15, durationH: 5, toxicityScore: 2 },
+  { id: 'harinas_refinadas', name: 'Pan Blanco / Harinas Refinadas', category: 'nutrition', effectK: -8, durationH: 4 },
+  { id: 'grasas_trans', name: 'Grasas Trans / Margarina', category: 'nutrition', effectK: -10, durationH: 24, toxicityScore: 3 },
+  { id: 'refresco_azucarado', name: 'Refresco / Soda Azucarada', category: 'nutrition', effectK: -14, durationH: 2, toxicityScore: 2 },
+  { id: 'jarabe_maiz', name: 'Jarabe de Maíz Alta Fructosa', category: 'nutrition', effectK: -16, durationH: 4, toxicityScore: 3 },
+  { id: 'fritos', name: 'Frituras / Aceites Vegetales Ref.', category: 'nutrition', effectK: -9, durationH: 8, toxicityScore: 2 },
 
   // --- HÁBITOS, PROTOCOLOS Y TERAPIAS (COMPORTAMENTALES) ---
   { id: 'ayuno', name: 'Ayuno Intermitente (Fin) / Break Fast', category: 'other', effectK: 8, durationH: 2 },

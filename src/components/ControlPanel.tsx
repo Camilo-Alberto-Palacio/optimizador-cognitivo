@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, Plus, Star, Search, Activity, Trash2, Hash, ChevronLeft, ChevronRight, BookOpen, FileText } from 'lucide-react';
+import { Clock, Plus, Star, Search, Activity, Trash2, Hash, ChevronLeft, ChevronRight, BookOpen, FileText, TrendingDown } from 'lucide-react';
 import { useEngineStore, getTodayStr } from '../store/useEngineStore';
 import { SUPPLEMENT_CATALOG } from '../data/supplements';
 
@@ -283,22 +283,27 @@ const ControlPanel: React.FC = () => {
              sortedLogs.map(log => {
                const def = SUPPLEMENT_CATALOG.find(s => s.id === log.supplementId);
                return (
-                 <div key={log.id} className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+                 <div key={log.id} className={`border rounded-xl p-3 shadow-sm ${def && def.effectK < 0 ? 'bg-rose-50/30 border-rose-100' : 'bg-white border-slate-200'}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
-                         <span className="bg-indigo-100 text-indigo-700 text-xs font-black px-2 py-1 rounded-md">{log.timeStr}</span>
+                         <span className={`${def && def.effectK < 0 ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'} text-xs font-black px-2 py-1 rounded-md`}>{log.timeStr}</span>
                          <div>
                            <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
                              {def?.name || 'Desconocido'} 
                              {(log.quantity && log.quantity > 1) ? (
-                               <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded-md">x{log.quantity}</span>
+                               <span className={`${def && def.effectK < 0 ? 'bg-rose-600' : 'bg-indigo-600'} text-white text-[10px] px-1.5 py-0.5 rounded-md`}>x{log.quantity}</span>
                              ) : null}
+                             {def && def.effectK < 0 && (
+                               <span className="flex items-center gap-0.5 text-[9px] font-black text-rose-600 uppercase tracking-tighter bg-rose-100/50 px-1.5 py-0.5 rounded">
+                                 <TrendingDown size={10} /> Impacto Negativo
+                               </span>
+                             )}
                            </p>
                          </div>
                       </div>
                       <button 
                         onClick={() => removeLog(log.id)}
-                        className="text-rose-500 bg-rose-50 hover:bg-rose-100 hover:text-rose-600 transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold"
+                        className={`${def && def.effectK < 0 ? 'text-rose-600 bg-rose-100 hover:bg-rose-200' : 'text-rose-500 bg-rose-50 hover:bg-rose-100'} transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold`}
                         title="Eliminar evento"
                       >
                         <Trash2 size={14} /> Borrar
