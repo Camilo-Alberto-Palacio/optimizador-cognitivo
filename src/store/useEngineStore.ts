@@ -232,10 +232,17 @@ export const useEngineStore = create<EngineState>()(
       },
 
       recalculate: () => {
-        const { allLogs, selectedDate, baseIq } = get();
+        const { allLogs, selectedDate, baseIq, fitnessData } = get();
         const logs = allLogs[selectedDate] || [];
+        
+        // Determinar el CI de base real para la gráfica (base estática vs ajustada por Fit)
+        let effectiveBaseIq = baseIq || 133;
+        if (fitnessData) {
+          effectiveBaseIq = calculateFitnessImpact(fitnessData, effectiveBaseIq);
+        }
+
         set({
-          chartData: MathEngine.calculateDailyPerformance(logs, baseIq || 133),
+          chartData: MathEngine.calculateDailyPerformance(logs, effectiveBaseIq),
           warnings: evaluateInteractions(logs)
         });
       }
