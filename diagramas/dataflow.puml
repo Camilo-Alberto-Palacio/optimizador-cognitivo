@@ -1,46 +1,65 @@
 @startuml DataFlow_v2
 skinparam defaultTextAlignment center
 skinparam backgroundColor #FAFAFA
-title Flujo de Datos - Registro Multidia y Motor Médico
+title Flujo de Datos - Registro Multidia y Motor Medico
 
 actor "Usuario" as User
-participant "ControlPanel\n(React)" as UI
-entity "useEngineStore\n(Zustand)" as Store
-entity "calculator.ts\n(Farmacocinética)" as CalcEngine
-entity "rules.ts\n(Motor Médico)" as Rules
-participant "Firestore\n(Cloud)" as DB
-participant "MasterChart\n+ WarningAlerts" as View
+participant "ControlPanel" as UI
+entity "useEngineStore" as Store
+entity "calculator.ts" as CalcEngine
+entity "rules.ts" as Rules
+participant "Firestore" as DB
+participant "MasterChart + WarningAlerts" as View
 
-== Selección de Fecha ==
-User -> UI : Navega con ← → entre días
-UI -> Store : setSelectedDate('2026-03-14')
-Store -> Store : Filtra allLogs['2026-03-14']
-Store -> CalcEngine : calculateDailyPerformance(logsDelDia, baseIq)
+== Seleccion de Fecha ==
+User -> UI : Navega con flechas entre dias
+UI -> Store : setSelectedDate("2026-03-14")
+Store -> CalcEngine : calculateDailyPerformance(logs, baseIq)
 CalcEngine --> Store : ChartDataPoint[]
-Store -> Rules : evaluateInteractions(logsDelDia)
-Rules --> Store : Warning[] (toxicidad, interacción, dieta)
-Store --> View : chartData[], warnings[] actualizados
+Store -> Rules : evaluateInteractions(logs)
+Rules --> Store : Warning[]
+Store --> View : Actualiza curva IQ y alertas
 
 == Registro de Nuevo Evento ==
-User -> UI : Busca "Café" / selecciona\n+ Cantidad: 2 + Hora: 08:00\n+ Nota: "con desayuno"
-UI -> Store : addLog('cafe', '08:00', 2, 'con desayuno')
+User -> UI : Busca suplemento, ingresa cantidad, hora y nota
+UI -> Store : addLog(suppId, timeStr, qty, note)
 
 activate Store
-Store -> Store : Crea LogEvent{\n  id: uuid,\n  date: selectedDate,\n  supplementId: 'cafe',\n  timeStr: '08:00',\n  quantity: 2,\n  note: '...',\n  timestamp: now\n}
-Store -> Store : allLogs[date].push(event)
-Store -right-> DB : setDoc(users/{uid},\n  { allLogs: ... }, merge)
+note over Store
+  Crea LogEvent con:
+  id (uuid), date (YYYY-MM-DD),
+  supplementId, timeStr, quantity, note
+end note
+
+Store -> DB : setDoc(users/uid, allLogs, merge)
 Store -> CalcEngine : recalcular(logsActualizados)
-note over CalcEngine : Suma efectK * qty * e^(-age/durationH)\npor cada evento anterior a la hora
-CalcEngine --> Store : chartData[] nuevo
+
+note over CalcEngine
+  Acumulo = SUM( effectK * qty * e^(-age/durationH) )
+  por cada evento antes de la hora evaluada
+end note
+
+CalcEngine --> Store : chartData[] recalculado
 Store -> Rules : evaluateInteractions(logs)
-note over Rules : Evalúa:\n- Toxicidad total (hepatica/renal)\n- Inhibición CYP450\n- Macros vs. estimulantes
+
+note over Rules
+  Evalua:
+  - Toxicidad total hepatica/renal
+  - Inhibicion enzimatica CYP450
+  - Macros caloricos vs estimulantes
+end note
+
 Rules --> Store : Warning[] con sugerencias
 deactivate Store
 
-Store --> View : Actualización reactiva (Zustand)
-View --> User : Curva IQ actualizada +\nAlertas clínicas con sugerencias
+Store --> View : Actualizacion reactiva (Zustand)
+View --> User : Curva IQ + Alertas clinicas
 
-== Migración desde Versión Anterior ==
-note over Store, DB : Si Firestore contiene campo "logs" (v1)\nEn setUser(), se migra automáticamente:\nlogs[] → allLogs{ fecha: logs[] }
+== Migracion desde Version Anterior ==
+note over Store, DB
+  Si Firestore tiene campo "logs" (formato v1 plano),
+  se migra automaticamente a allLogs{fecha: events[]}
+  usando el timestamp de cada evento para asignar la fecha.
+end note
 
 @enduml
