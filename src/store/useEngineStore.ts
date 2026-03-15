@@ -68,6 +68,7 @@ export const useEngineStore = create<EngineState>()(
             if (docSnap.exists()) {
               const data = docSnap.data();
               const cloudAllLogs = data.allLogs;
+              const cloudOldLogs = data.logs; // Legacy flat array
               const cloudFavorites = data.favorites;
               const cloudBaseIq = data.baseIq;
               
@@ -76,7 +77,31 @@ export const useEngineStore = create<EngineState>()(
               }
 
               if (cloudAllLogs) {
+                // New format: use as-is
                 set({ allLogs: cloudAllLogs });
+              } else if (cloudOldLogs && Array.isArray(cloudOldLogs) && cloudOldLogs.length > 0) {
+                // MIGRATION: convert legacy flat logs to allLogs map
+                // Use timestamp to determine each log's date; fall back to yesterday
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const fallbackDate = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+                const migratedAllLogs: Record<string, LogEvent[]> = {};
+                (cloudOldLogs as LogEvent[]).forEach((log) => {
+                  // Determine date from timestamp or fall back
+                  let dateStr = fallbackDate;
+                  if (log.timestamp) {
+                    const d = new Date(log.timestamp);
+                    dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                  }
+                  if (!migratedAllLogs[dateStr]) migratedAllLogs[dateStr] = [];
+                  migratedAllLogs[dateStr].push({ ...log, date: dateStr });
+                });
+
+                set({ allLogs: migratedAllLogs });
+                // Persist migrated structure to Firestore
+                setDoc(docRef, { allLogs: migratedAllLogs }, { merge: true })
+                  .catch(err => console.error('Migration save error:', err));
               }
 
               if (cloudFavorites) {
