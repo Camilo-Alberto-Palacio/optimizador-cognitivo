@@ -1,66 +1,101 @@
-@startuml StateStructure
+@startuml StateStructure_v2
 skinparam class {
     BackgroundColor White
-    ArrowColor #3b82f6
+    ArrowColor #6366f1
     BorderColor #1e293b
+    FontSize 12
 }
-
-title Estructura del Estado Global (Zustand)
+skinparam backgroundColor #FAFAFA
+title Estructura del Estado Global - useEngineStore (Zustand v5)
 
 class "useEngineStore" as Store {
-    + activeSupps : Object
-    + chartData : Array
-    + warnings : Array
-    + userSettings : Object
+    + allLogs: Record<DateStr, LogEvent[]>
+    + selectedDate: string
+    + favorites: string[]
+    + chartData: ChartDataPoint[]
+    + warnings: Warning[]
+    + baseIq: number | null
+    + hasCompletedAssessment: boolean
+    + user: User | null
+    + authLoading: boolean
     --
-    + toggleSupplement(id: String)
-    + updateSettings(newSettings: Object)
-    - recalculateEngine()
+    + setSelectedDate(date: string)
+    + addLog(suppId, time, qty?, note?)
+    + removeLog(id: string)
+    + toggleFavorite(suppId: string)
+    + setBaseIq(iq: number)
+    + resetAssessment()
+    + setUser(user: User | null)
+    - recalculate()
+    + getLogsForDate(date: string)
 }
 
-class "activeSupps (Object)" as Supps {
-    .. Upgrades Premium ..
-    + citicolina : boolean
-    + rhodiola : boolean
-    + flowState : boolean
-    .. Magnesio Triple ..
-    + magManana : boolean
-    + magTarde : boolean
-    + magNoche : boolean
-    .. Cafeína ..
-    + cafe9am : boolean
-    + cafe11am : boolean
-    + cafe2pm : boolean
-    + matcha : boolean
-    .. Nutrición Básica ..
-    + huevosManana : boolean
-    + cocoaManana : boolean
-    + curcuma : boolean
-    ... (etc) ...
+class "LogEvent" as Event {
+    + id: string (UUID)
+    + supplementId: string
+    + date: string (YYYY-MM-DD)
+    + timeStr: string (HH:mm)
+    + quantity: number
+    + timestamp: number
+    + note?: string
 }
 
-class "chartData (Array of Objects)" as ChartData {
-    + time : String (Ej. "08:30")
-    + natural : Number
-    + optimized : Number
-    + iq : Number
-    + flow : boolean
+class "SupplementDef" as Supp {
+    + id: string
+    + name: string
+    + category: SupplementCategory
+    + effectK: number
+    + durationH: number
+    + isStimulant?: boolean
+    + toxicityScore?: number
+    + interactionTags?: string[]
+    + macronutrients?: MacroProfile
 }
 
-class "warnings (Array of Strings)" as Warnings {
-    + "Riesgo Hipoglucemia (Cúrcuma+Rhodiola)"
-    + "Riesgo Renal (Altas dosis Magnesio+Creatina)"
+class "MacroProfile" as Macro {
+    + protein: number
+    + carbs: number
+    + fats: number
+    + calories: number
 }
 
-class "userSettings (V2 - Futuro)" as Settings {
-    + baseIQ : Number = 133
-    + targetIQ : Number = 145
-    + syncGoogleFit : boolean = false
+class "ChartDataPoint" as Chart {
+    + time: string (HH:mm)
+    + natural: number (0-100)
+    + optimized: number (0-100)
+    + iq: number
+    + flow: boolean
 }
 
-Store *-- Supps : Contiene
-Store *-- ChartData : Calcula
-Store *-- Warnings : Evalúa
-Store *-- Settings : Administra
+class "Warning" as Warn {
+    + id: string
+    + type: 'interaction' | 'toxicity'\n   | 'dietary' | 'general'
+    + severity: 'high' | 'medium' | 'low'
+    + message: string
+    + suggestion?: string
+}
+
+enum "SupplementCategory" as Cat {
+    nootropic
+    mineral
+    stimulant
+    nutrition
+    adaptation
+    other
+}
+
+Store *-- Event : allLogs{date: Event[]}
+Store *-- Chart : chartData[]
+Store *-- Warn : warnings[]
+Supp --> Cat : category
+Supp *-- Macro : macronutrients?
+Event --> Supp : supplementId (ref)
+
+note bottom of Store
+  Persistencia dual:
+  - LocalStorage (Zustand persist)
+  - Firestore (cloud sync por usuario)
+  Clave: 'quantum-engine-storage-v2'
+end note
 
 @enduml

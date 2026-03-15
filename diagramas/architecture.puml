@@ -1,48 +1,63 @@
-@startuml Architecture
+@startuml Architecture_v2
 skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+title Arquitectura del Sistema - Optimizador Cognitivo v8.0 Enterprise
 
-package "Capa de UI (React Components)" {
-  [App Orchestrator] as App
-  [ControlPanel] as Control
-  [MasterChart] as Chart
-  [HeaderStats] as Stats
-  [WarningAlerts] as Alerts
+package "Capa de UI (React Components)" #EEF2FF {
+  [App.tsx] as App <<Orchestrator>>
+  [ControlPanel.tsx] as Control <<Journal + Favoritos>>
+  [MasterChart.tsx] as Chart <<Recharts>>
+  [HeaderStats.tsx] as Stats
+  [WarningAlerts.tsx] as Alerts <<Medical Panel>>
+  [LoginScreen.tsx] as Login
+  [IqAssessment/] as IQ <<Test Cognitivo>>
+  [FooterAnalysis.tsx] as Footer
 }
 
-package "Capa de Estado (Zustand Global)" {
-  [useEngineStore] as Store << Zustand >>
+package "Capa de Estado (Zustand v5)" #F0FDF4 {
+  [useEngineStore] as Store <<Persist + Cloud Sync>>
 }
 
-package "Motor de Lógica (Domain)" {
-  [Pharmacokinetics Engine] as CalcEngine << Pure JS >>
-  [Rules & Interactions] as RulesEngine << Pure JS >>
+package "Motor de Lógica (Domain Engine)" #FFF7ED {
+  [calculator.ts] as CalcEngine <<Farmacocinética>>
+  [rules.ts] as RulesEngine <<CYP450 + Toxicidad>>
+  [supplements.ts] as Catalog <<~100 entradas>>
 }
 
-package "Futuro V2 (Servicios API)" as Future {
-  [Supabase Auth & DB] as DB
-  [Google Fit API] as GFit
+package "Servicios de Plataforma" #F0F4FF {
+  [Firebase Auth] as Auth <<Google OAuth>>
+  [Firestore DB] as DB <<Cloud Persistence>>
+  [Vite PWA] as PWA <<Offline Support>>
 }
 
-' Relaciones UI a Zustand
+' UI a Zustand
 App --> Control
 App --> Chart
 App --> Stats
 App --> Alerts
+App --> Footer
+App --> Login : "si !user"
+App --> IQ : "si !assessmentCompleted"
 
-Store -.-> Control : Lee Estado
-Store -.-> Chart : Lee Puntos IQ
-Store -.-> Stats : Lee Baseline
-Control -.-> Store : Despacha Action \n(toggleSupp)
+Store ..> Control : "allLogs[date]\nfavorites"
+Store ..> Chart : "chartData[]"
+Store ..> Stats : "baseIq\nselectedDate"
+Store ..> Alerts : "warnings[]"
 
-' Relaciones Zustand a Motor
-Store -down-> CalcEngine : Inyecta estado actual
-CalcEngine -up-> Store : Retorna matriz matemática (curva)
+Control ..> Store : "addLog()\nremoveLog()\nsetSelectedDate()"
 
-Store -down-> RulesEngine : Pide validación de combos
-RulesEngine -up-> Store : Retorna Alertas / Warnings
+' Zustand a Motor
+Store -down-> CalcEngine : "logs[], baseIq"
+CalcEngine -up-> Store : "ChartDataPoint[]"
+Store -down-> RulesEngine : "logs[]"
+RulesEngine -up-> Store : "Warning[]"
+CalcEngine ..> Catalog : "SUPPLEMENT_CATALOG"
+RulesEngine ..> Catalog : "toxicityScore\ninteractionTags"
 
-' Relaciones a V2
-DB -.-> Store : Sincroniza Perfil/Historial
-GFit -.-> Store : Inyecta Baseline (Sueño Real)
+' Servicios
+Auth --> Store : "setUser(user)"
+Store --> DB : "sync(allLogs, favorites)"
+DB --> Store : "load on login"
+PWA --> App : "Offline Cache"
 
 @enduml

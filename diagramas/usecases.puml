@@ -1,47 +1,82 @@
-@startuml UseCases
+@startuml UseCases_v2
 left to right direction
 skinparam packageStyle rectangle
+skinparam backgroundColor #FAFAFA
+title Casos de Uso - Optimizador Cognitivo v8.0 Enterprise
 
-actor "Usuario \n(Biohacker)" as User
-actor "Sistema Experto \n(Motor Matemático)" as Engine
-actor "Servicios Externos \n(Futuro)" as API
+actor "Usuario\n(Biohacker)" as User
+actor "Motor Médico\n(Rules + Calc Engine)" as Engine
+actor "Firebase\n(Auth + Firestore)" as Cloud
 
-rectangle "Optimizador Cognitivo v8.0" {
-  
-  package "Fase 1 (Actual)" {
-    usecase "Configurar Stack Base" as UC1
-    usecase "Activar Tiempos de Cafeína" as UC2
-    usecase "Visualizar Proyección de CI" as UC3
-    usecase "Recibir Alertas Médicas" as UC4
-    usecase "Activar Modo Flow" as UC5
+rectangle "Optimizador Cognitivo v8.0 Enterprise" {
+
+  package "Autenticación y Perfil" {
+    usecase "Iniciar Sesión con Google" as UC_Login
+    usecase "Realizar Test de CI Base" as UC_IQ
+    usecase "Repetir Test de CI" as UC_IQReset
   }
 
-  package "Fase 2 (Próximamente)" {
-    usecase "Iniciar Sesión Segura" as UC6
-    usecase "Guardar Snapshot Histórico" as UC7
-    usecase "Sincronizar Datos de Sueño Real" as UC8
+  package "Bitácora Multidia (Journal)" {
+    usecase "Navegar entre Días" as UC_Nav
+    usecase "Registrar Evento con Hora" as UC_Log
+    usecase "Especificar Cantidad / Dosis" as UC_Qty
+    usecase "Añadir Nota Libre al Evento" as UC_Note
+    usecase "Eliminar Evento del Historial" as UC_Del
+    usecase "Consultar Días Anteriores" as UC_History
+  }
+
+  package "Catálogo Universal (~100 items)" {
+    usecase "Buscar Suplemento/Hábito" as UC_Search
+    usecase "Marcar como Favorito" as UC_Fav
+    usecase "Registrar Alimento / Comida" as UC_Food
+    usecase "Registrar Péptido / Nootrópico" as UC_Nootropic
+    usecase "Registrar Hábito Conductual" as UC_Habit
+  }
+
+  package "Motor de Análisis" {
+    usecase "Visualizar Curva CI Proyectada" as UC_Chart
+    usecase "Recibir Alerta de Toxicidad" as UC_Toxic
+    usecase "Recibir Alerta de Interacción CYP450" as UC_CYP
+    usecase "Recibir Consejo Nutricional" as UC_Diet
+    usecase "Detectar Modo Flow" as UC_Flow
+  }
+
+  package "Sincronización en la Nube" {
+    usecase "Guardar Bitácora en Firestore" as UC_Cloud
+    usecase "Cargar Historial al Iniciar Sesión" as UC_Load
+    usecase "Migrar Datos a Formato Nuevo" as UC_Migrate
   }
 }
 
-' Interacciones del Usuario (Actual)
-User --> UC1
-User --> UC2
-User --> UC5
-User --> UC3
+' Usuario principales
+User --> UC_Login
+User --> UC_IQ
+User --> UC_IQReset
+User --> UC_Nav
+User --> UC_Log
+User --> UC_Search
+User --> UC_Fav
+User --> UC_History
 
-' Interacciones del Usuario (Futuro)
-User --> UC6
-User --> UC7
+UC_Log .> UC_Qty : <<incluye>>
+UC_Log .> UC_Note : <<incluye>>
+UC_Search .> UC_Food : <<extiende>>
+UC_Search .> UC_Nootropic : <<extiende>>
+UC_Search .> UC_Habit : <<extiende>>
 
-' Interacciones del Motor
-Engine --> UC3 : "Genera Curva"
-Engine --> UC4 : "Evalúa Interacciones"
-UC1 .> Engine : "Inyecta Datos"
-UC2 .> Engine : "Inyecta Datos"
+' Motor
+Engine --> UC_Chart : "Genera curva\nfarmacocinética"
+Engine --> UC_Toxic : "Evalúa carga\nhepática/renal"
+Engine --> UC_CYP : "Detecta inhibición\nenziMática"
+Engine --> UC_Diet : "Analiza macros\nvs estimulantes"
+Engine --> UC_Flow : "Detecta umbral\nde activación"
+UC_Log .> Engine : "Dispara\nrecálculo"
+UC_Del .> Engine : "Dispara\nrecálculo"
 
-' Interacciones V2
-API --> UC8
-UC8 .> Engine : "Altera Línea Base"
-UC6 .> UC7 : "Requiere"
+' Cloud
+Cloud --> UC_Login : "OAuth"
+Cloud --> UC_Load
+Cloud --> UC_Migrate : "logs[] → allLogs{}"
+UC_Log .> UC_Cloud : "Auto-sync"
 
 @enduml
