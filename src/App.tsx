@@ -4,12 +4,13 @@ import { auth } from './services/firebase';
 import { useEngineStore } from './store/useEngineStore';
 import HeaderStats from './components/HeaderStats';
 import MasterChart from './components/MasterChart';
-import ControlPanel from './components/ControlPanel';
+import SupplementSelector from './components/SupplementSelector';
 import FooterAnalysis from './components/FooterAnalysis';
 import WarningAlerts from './components/ui/WarningAlerts';
 import LoginScreen from './components/LoginScreen';
 import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
 import FitnessPanel from './components/FitnessPanel';
+import JournalTimeline from './components/JournalTimeline';
 
 const App: React.FC = () => {
   const { user, authLoading, setUser } = useEngineStore();
@@ -50,12 +51,13 @@ const App: React.FC = () => {
           {/* Barra Lateral Izquierda: Datos de Salud y Bitácora */}
           <div className="lg:col-span-3 flex flex-col gap-6">
             <FitnessPanel />
-            <ControlPanel />
+            <JournalTimeline />
           </div>
 
-          {/* Columna Principal: Visualización */}
+          {/* Columna Principal: Visualización y Acción */}
           <div className="lg:col-span-9 flex flex-col gap-6">
             <MasterChart />
+            <SupplementSelector />
           </div>
         </div>
 
