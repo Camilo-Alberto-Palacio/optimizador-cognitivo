@@ -1,65 +1,50 @@
 @startuml DataFlow_v2
 skinparam defaultTextAlignment center
 skinparam backgroundColor #FAFAFA
-title Flujo de Datos - Registro Multidia y Motor Medico
+title Flujo de Datos - Bio-Sincronización y Motor Cognitivo
 
 actor "Usuario" as User
-participant "ControlPanel" as UI
-entity "useEngineStore" as Store
-entity "calculator.ts" as CalcEngine
-entity "rules.ts" as Rules
+participant "App / UI" as UI
+participant "useEngineStore" as Store
+participant "googleFit.ts" as FitService
+participant "calculator.ts" as CalcEngine
 participant "Firestore" as DB
-participant "MasterChart + WarningAlerts" as View
+participant "MasterChart" as View
 
-== Seleccion de Fecha ==
-User -> UI : Navega con flechas entre dias
-UI -> Store : setSelectedDate("2026-03-14")
-Store -> CalcEngine : calculateDailyPerformance(logs, baseIq)
-CalcEngine --> Store : ChartDataPoint[]
-Store -> Rules : evaluateInteractions(logs)
-Rules --> Store : Warning[]
-Store --> View : Actualiza curva IQ y alertas
+== Sincronización de Salud (Google Fit) ==
+User -> UI : Pulsa "Refrescar" o Cambia Fecha
+UI -> Store : loadFitnessData()
+Store -> FitService : fetchFitnessData(token, date)
 
-== Registro de Nuevo Evento ==
-User -> UI : Busca suplemento, ingresa cantidad, hora y nota
-UI -> Store : addLog(suppId, timeStr, qty, note)
+activate FitService
+FitService -> FitService : mergeSleepIntervals()\n(Triple Verificación)
+FitService --> Store : FitnessData {sleep, steps, bpm}
+deactivate FitService
 
-activate Store
-note over Store
-  Crea LogEvent con:
-  id (uuid), date (YYYY-MM-DD),
-  supplementId, timeStr, quantity, note
-end note
+Store -> Store : recalculate()
+Store -> CalcEngine : calculateDailyPerformance(logs, baseIq, fitness)
+CalcEngine --> Store : ChartDataPoint {iqBase, iqFitness, iqBoost}
+Store --> View : Renderiza desgloses y curva
 
-Store -> DB : setDoc(users/uid, allLogs, merge)
-Store -> CalcEngine : recalcular(logsActualizados)
+== Ajuste Manual de Sueño ==
+User -> UI : Click +0.5h / -0.5h
+UI -> Store : updateManualSleep(delta)
+Store -> DB : sync manualSleepAdjustment
+Store -> Store : recalculate()
+Store --> View : Actualización inmediata del CI
 
-note over CalcEngine
-  Acumulo = SUM( effectK * qty * e^(-age/durationH) )
-  por cada evento antes de la hora evaluada
-end note
+== Registro de suplementos ==
+User -> UI : Selecciona Favorito o Busca Nootrópico
+UI -> Store : addLog(suppId, time, qty)
+Store -> DB : setDoc(logs)
+Store -> Store : recalculate()
+Store --> View : Actualiza curva con impacto farmacocinético
 
-CalcEngine --> Store : chartData[] recalculado
-Store -> Rules : evaluateInteractions(logs)
-
-note over Rules
-  Evalua:
-  - Toxicidad total hepatica/renal
-  - Inhibicion enzimatica CYP450
-  - Macros caloricos vs estimulantes
-end note
-
-Rules --> Store : Warning[] con sugerencias
-deactivate Store
-
-Store --> View : Actualizacion reactiva (Zustand)
-View --> User : Curva IQ + Alertas clinicas
-
-== Migracion desde Version Anterior ==
-note over Store, DB
-  Si Firestore tiene campo "logs" (formato v1 plano),
-  se migra automaticamente a allLogs{fecha: events[]}
-  usando el timestamp de cada evento para asignar la fecha.
-end note
+== Visibilidad de Logs ==
+User -> UI : Toggle "Ojo" (Ocultar)
+UI -> Store : toggleLogVisibility(logId)
+Store -> CalcEngine : Filtra logs.hidden === false
+Store -> Store : recalculate()
+Store --> View : Muestra impacto del retiro del suplemento
 
 @enduml

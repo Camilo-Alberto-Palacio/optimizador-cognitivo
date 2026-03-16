@@ -13,89 +13,64 @@ class "useEngineStore" as Store {
     + selectedDate: string
     + favorites: string[]
     + chartData: ChartDataPoint[]
-    + warnings: Warning[]
+    + fitnessData: FitnessData | null
+    + manualSleepAdjustment: Record<string, number>
+    + fitAccessToken: string | null
     + baseIq: number | null
     + hasCompletedAssessment: boolean
     + user: User | null
-    + authLoading: boolean
     --
     + setSelectedDate(date: string)
     + addLog(suppId, time, qty?, note?)
-    + removeLog(id: string)
-    + toggleFavorite(suppId: string)
-    + setBaseIq(iq: number)
-    + resetAssessment()
-    + setUser(user: User | null)
+    + toggleLogVisibility(id: string)
+    + updateManualSleep(hours: number)
+    + loadFitnessData()
     - recalculate()
-    + getLogsForDate(date: string)
 }
 
 class "LogEvent" as Event {
     + id: string (UUID)
     + supplementId: string
-    + date: string (YYYY-MM-DD)
     + timeStr: string (HH:mm)
     + quantity: number
-    + timestamp: number
     + note?: string
+    + hidden: boolean
+}
+
+class "FitnessData" as Fit {
+    + sleepHours: number | null
+    + restingHeartRate: number | null
+    + steps: number | null
+    + activeCalories: number | null
+    + lastFetched: number
+}
+
+class "ChartDataPoint" as Chart {
+    + time: string (HH:mm)
+    + iq: number (Real/Total)
+    + iqBase: number (Sin ajustes)
+    + iqFitness: number (Impacto Fit)
+    + iqBoost: number (Impacto Logs)
+    + flow: boolean
 }
 
 class "SupplementDef" as Supp {
     + id: string
     + name: string
-    + category: SupplementCategory
     + effectK: number
     + durationH: number
-    + isStimulant?: boolean
-    + toxicityScore?: number
-    + interactionTags?: string[]
-    + macronutrients?: MacroProfile
-}
-
-class "MacroProfile" as Macro {
-    + protein: number
-    + carbs: number
-    + fats: number
-    + calories: number
-}
-
-class "ChartDataPoint" as Chart {
-    + time: string (HH:mm)
-    + natural: number (0-100)
-    + optimized: number (0-100)
-    + iq: number
-    + flow: boolean
-}
-
-class "Warning" as Warn {
-    + id: string
-    + type: 'interaction' | 'toxicity'\n   | 'dietary' | 'general'
-    + severity: 'high' | 'medium' | 'low'
-    + message: string
-    + suggestion?: string
-}
-
-enum "SupplementCategory" as Cat {
-    nootropic
-    mineral
-    stimulant
-    nutrition
-    adaptation
-    other
+    + category: Category
 }
 
 Store *-- Event : allLogs{date: Event[]}
+Store *-- Fit : fitnessData
 Store *-- Chart : chartData[]
-Store *-- Warn : warnings[]
-Supp --> Cat : category
-Supp *-- Macro : macronutrients?
 Event --> Supp : supplementId (ref)
 
 note bottom of Store
-  Persistencia dual:
-  - LocalStorage (Zustand persist)
-  - Firestore (cloud sync por usuario)
-  Clave: 'quantum-engine-storage-v2'
+  Persistencia:
+  - Firestore: manualSleepAdjustment, allLogs, favorites
+  - LocalStorage: fitAccessToken, baseIq, config
 end note
 
 @enduml

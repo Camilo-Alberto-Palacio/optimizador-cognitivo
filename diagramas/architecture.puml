@@ -5,13 +5,14 @@ title Arquitectura del Sistema - Optimizador Cognitivo v8.0 Enterprise
 
 package "Capa de UI (React Components)" #EEF2FF {
   [App.tsx] as App <<Orchestrator>>
-  [ControlPanel.tsx] as Control <<Journal + Favoritos>>
+  [JournalTimeline.tsx] as Journal <<Historial + Fechas>>
+  [SupplementSelector.tsx] as Selector <<Favoritos + Registro>>
+  [FitnessPanel.tsx] as Fitness <<Salud + Ajustes>>
   [MasterChart.tsx] as Chart <<Recharts>>
   [HeaderStats.tsx] as Stats
   [WarningAlerts.tsx] as Alerts <<Medical Panel>>
   [LoginScreen.tsx] as Login
   [IqAssessment/] as IQ <<Test Cognitivo>>
-  [FooterAnalysis.tsx] as Footer
 }
 
 package "Capa de Estado (Zustand v5)" #F0FDF4 {
@@ -19,45 +20,45 @@ package "Capa de Estado (Zustand v5)" #F0FDF4 {
 }
 
 package "Motor de Lógica (Domain Engine)" #FFF7ED {
-  [calculator.ts] as CalcEngine <<Farmacocinética>>
-  [rules.ts] as RulesEngine <<CYP450 + Toxicidad>>
+  [calculator.ts] as CalcEngine <<Farmacocinética + CI Breakdown>>
+  [googleFit.ts] as FitService <<Triple Verificación>>
   [supplements.ts] as Catalog <<~100 entradas>>
 }
 
 package "Servicios de Plataforma" #F0F4FF {
-  [Firebase Auth] as Auth <<Google OAuth>>
-  [Firestore DB] as DB <<Cloud Persistence>>
+  [Google Fit API] as FitAPI <<OAuth Restricted>>
+  [Firebase Auth/DB] as Cloud <<Cloud Sync>>
   [Vite PWA] as PWA <<Offline Support>>
 }
 
-' UI a Zustand
-App --> Control
+' UI a Zustand/Servicios
+App --> Journal
+App --> Selector
+App --> Fitness
 App --> Chart
 App --> Stats
-App --> Alerts
-App --> Footer
 App --> Login : "si !user"
 App --> IQ : "si !assessmentCompleted"
 
-Store ..> Control : "allLogs[date]\nfavorites"
-Store ..> Chart : "chartData[]"
+Store ..> Journal : "allLogs[date]"
+Store ..> Selector : "favorites"
+Store ..> Fitness : "fitnessData\nmanualSleepAdjustment"
+Store ..> Chart : "chartData[iqBase/Fit/Boost]"
 Store ..> Stats : "baseIq\nselectedDate"
-Store ..> Alerts : "warnings[]"
 
-Control ..> Store : "addLog()\nremoveLog()\nsetSelectedDate()"
+Journal ..> Store : "setSelectedDate()\ntoggleLogVisibility()"
+Selector ..> Store : "addLog()\ntoggleFavorite()"
+Fitness ..> Store : "loadFitnessData()\nupdateManualSleep()"
 
 ' Zustand a Motor
-Store -down-> CalcEngine : "logs[], baseIq"
+Store -down-> CalcEngine : "logs[], baseIq, fitness"
 CalcEngine -up-> Store : "ChartDataPoint[]"
-Store -down-> RulesEngine : "logs[]"
-RulesEngine -up-> Store : "Warning[]"
-CalcEngine ..> Catalog : "SUPPLEMENT_CATALOG"
-RulesEngine ..> Catalog : "toxicityScore\ninteractionTags"
+Store -down-> FitService : "fetchFitnessData(token)"
+FitService -up-> Store : "FitnessData"
+FitService -right-> FitAPI : "REST POST/JSON"
 
 ' Servicios
-Auth --> Store : "setUser(user)"
-Store --> DB : "sync(allLogs, favorites)"
-DB --> Store : "load on login"
+Cloud --> Store : "Auth + Firestore Sync"
 PWA --> App : "Offline Cache"
 
 @enduml

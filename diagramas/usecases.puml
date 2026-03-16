@@ -4,79 +4,49 @@ skinparam packageStyle rectangle
 skinparam backgroundColor #FAFAFA
 title Casos de Uso - Optimizador Cognitivo v8.0 Enterprise
 
-actor "Usuario\n(Biohacker)" as User
-actor "Motor Médico\n(Rules + Calc Engine)" as Engine
-actor "Firebase\n(Auth + Firestore)" as Cloud
+actor "Usuario" as User
+actor "Motor" as Engine
+actor "Google Fit" as FitAPI
 
-rectangle "Optimizador Cognitivo v8.0 Enterprise" {
+rectangle "Optimizador Cognitivo" {
 
-  package "Autenticación y Perfil" {
-    usecase "Iniciar Sesión con Google" as UC_Login
-    usecase "Realizar Test de CI Base" as UC_IQ
-    usecase "Repetir Test de CI" as UC_IQReset
+  package "Bio-Sincronización" {
+    usecase "Vincular Cuenta Google Fit" as UC_FitLink
+    usecase "Sincronizar Sueño/Pasos/FC" as UC_FitSync
+    usecase "Ajustar Sueño Manualmente" as UC_SleepAdj
   }
 
-  package "Bitácora Multidia (Journal)" {
-    usecase "Navegar entre Días" as UC_Nav
-    usecase "Registrar Evento con Hora" as UC_Log
-    usecase "Especificar Cantidad / Dosis" as UC_Qty
-    usecase "Añadir Nota Libre al Evento" as UC_Note
-    usecase "Eliminar Evento del Historial" as UC_Del
-    usecase "Consultar Días Anteriores" as UC_History
+  package "Bitácora Inteligente" {
+    usecase "Registrar Suplemento" as UC_Log
+    usecase "Navegar Historial (Fechas)" as UC_Nav
+    usecase "Ocultar Evento (Simular Desactivación)" as UC_Hide
+    usecase "Gestionar Favoritos" as UC_Fav
   }
 
-  package "Catálogo Universal (~100 items)" {
-    usecase "Buscar Suplemento/Hábito" as UC_Search
-    usecase "Marcar como Favorito" as UC_Fav
-    usecase "Registrar Alimento / Comida" as UC_Food
-    usecase "Registrar Péptido / Nootrópico" as UC_Nootropic
-    usecase "Registrar Hábito Conductual" as UC_Habit
-  }
-
-  package "Motor de Análisis" {
-    usecase "Visualizar Curva CI Proyectada" as UC_Chart
-    usecase "Recibir Alerta de Toxicidad" as UC_Toxic
-    usecase "Recibir Alerta de Interacción CYP450" as UC_CYP
-    usecase "Recibir Consejo Nutricional" as UC_Diet
-    usecase "Detectar Modo Flow" as UC_Flow
-  }
-
-  package "Sincronización en la Nube" {
-    usecase "Guardar Bitácora en Firestore" as UC_Cloud
-    usecase "Cargar Historial al Iniciar Sesión" as UC_Load
-    usecase "Migrar Datos a Formato Nuevo" as UC_Migrate
+  package "Análisis y Visualización" {
+    usecase "Ver Gráfico de Rendimiento" as UC_Chart
+    usecase "Consultar Desglose de CI" as UC_CI_Breakdown
+    usecase "Recibir Alertas de Interacción" as UC_Alerts
   }
 }
 
-' Usuario principales
-User --> UC_Login
-User --> UC_IQ
-User --> UC_IQReset
-User --> UC_Nav
+User --> UC_FitLink
+User --> UC_FitSync
+User --> UC_SleepAdj
 User --> UC_Log
-User --> UC_Search
+User --> UC_Nav
+User --> UC_Hide
 User --> UC_Fav
-User --> UC_History
+User --> UC_Chart
+User --> UC_CI_Breakdown
 
-UC_Log .> UC_Qty : <<incluye>>
-UC_Log .> UC_Note : <<incluye>>
-UC_Search .> UC_Food : <<extiende>>
-UC_Search .> UC_Nootropic : <<extiende>>
-UC_Search .> UC_Habit : <<extiende>>
+UC_FitSync <--- FitAPI : "Provee bio-datos"
+UC_Log --> Engine : "Calcula impacto"
+UC_Hide --> Engine : "Recalcula sin impacto"
+UC_SleepAdj --> Engine : "Ajusta base CI"
 
-' Motor
-Engine --> UC_Chart : "Genera curva\nfarmacocinética"
-Engine --> UC_Toxic : "Evalúa carga\nhepática/renal"
-Engine --> UC_CYP : "Detecta inhibición\nenziMática"
-Engine --> UC_Diet : "Analiza macros\nvs estimulantes"
-Engine --> UC_Flow : "Detecta umbral\nde activación"
-UC_Log .> Engine : "Dispara\nrecálculo"
-UC_Del .> Engine : "Dispara\nrecálculo"
-
-' Cloud
-Cloud --> UC_Login : "OAuth"
-Cloud --> UC_Load
-Cloud --> UC_Migrate : "logs[] → allLogs{}"
-UC_Log .> UC_Cloud : "Auto-sync"
+Engine --> UC_Chart
+Engine --> UC_CI_Breakdown
+Engine --> UC_Alerts
 
 @enduml
