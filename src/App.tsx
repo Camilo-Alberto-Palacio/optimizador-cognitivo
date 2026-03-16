@@ -47,10 +47,15 @@ const App: React.FC = () => {
         <WarningAlerts />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <MasterChart />
-          <div className="lg:col-span-4 flex flex-col gap-6">
+          {/* Barra Lateral Izquierda: Datos de Salud y Bitácora */}
+          <div className="lg:col-span-3 flex flex-col gap-6">
             <FitnessPanel />
             <ControlPanel />
+          </div>
+
+          {/* Columna Principal: Visualización */}
+          <div className="lg:col-span-9 flex flex-col gap-6">
+            <MasterChart />
           </div>
         </div>
 

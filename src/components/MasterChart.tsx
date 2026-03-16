@@ -55,7 +55,7 @@ const MasterChart: React.FC = () => {
   const chartData = useEngineStore((state) => state.chartData);
 
   return (
-    <div className="lg:col-span-8 bg-white p-4 md:p-6 rounded-[2.5rem] md:rounded-[3rem] border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
+    <div className="bg-white p-4 md:p-6 rounded-[2.5rem] md:rounded-[3rem] border border-slate-200 shadow-xl shadow-slate-200/50 relative overflow-hidden group">
       <div className="h-[300px] md:h-[450px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData}>

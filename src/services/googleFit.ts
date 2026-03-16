@@ -30,7 +30,7 @@ const getNightSleepRange = (dateStr: string) => {
   
   return {
     startMs: start.getTime(),
-    endMs: end.getTime(),
+    endMs: Math.min(end.getTime(), Date.now()), // No pedir datos del futuro
   };
 };
 
@@ -133,14 +133,11 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
           const segmentType = p.value?.[0]?.intVal ?? 0;
           if (segmentType === 2 || (segmentType >= 4 && segmentType <= 6)) {
-            // Parsing más robusto: maneja strings o números y evita precisión excesiva innecesaria
-            const sStr = p.startTimeNanos?.toString();
-            const eStr = p.endTimeNanos?.toString();
-            if (sStr && eStr) {
-               allIntervals.push({
-                 start: Math.floor(Number(sStr.slice(0, -6))),
-                 end: Math.floor(Number(eStr.slice(0, -6)))
-               });
+            if (p.startTimeNanos && p.endTimeNanos) {
+              allIntervals.push({
+                start: Number(BigInt(p.startTimeNanos) / 1000000n),
+                end: Number(BigInt(p.endTimeNanos) / 1000000n)
+              });
             }
           }
         });
@@ -152,13 +149,11 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
       sleepActivityRes.bucket.forEach((bucket: any) => {
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
           if ((p.value?.[0]?.intVal ?? 0) === 72) {
-            const sStr = p.startTimeNanos?.toString();
-            const eStr = p.endTimeNanos?.toString();
-            if (sStr && eStr) {
-               allIntervals.push({
-                 start: Math.floor(Number(sStr.slice(0, -6))),
-                 end: Math.floor(Number(eStr.slice(0, -6)))
-               });
+            if (p.startTimeNanos && p.endTimeNanos) {
+              allIntervals.push({
+                start: Number(BigInt(p.startTimeNanos) / 1000000n),
+                end: Number(BigInt(p.endTimeNanos) / 1000000n)
+              });
             }
           }
         });
