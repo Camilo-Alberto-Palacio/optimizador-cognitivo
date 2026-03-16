@@ -4,25 +4,43 @@ import { useEngineStore } from '../store/useEngineStore';
 import { calculateFitnessImpact } from '../services/googleFit';
 
 const FitnessPanel: React.FC = () => {
-    const { fitnessData, fitAccessToken, loadFitnessData, baseIq } = useEngineStore();
+    const { 
+        fitnessData, 
+        fitAccessToken, 
+        loadFitnessData, 
+        baseIq, 
+        manualSleepAdjustment, 
+        selectedDate,
+        updateManualSleep 
+    } = useEngineStore();
 
     const handleRefresh = async () => {
         console.log("FitnessPanel: Intentando refrescar datos manual... token:", !!fitAccessToken);
         if (fitAccessToken) await loadFitnessData();
     };
 
-    // Si no hay token (usuario no re-autorizado), mostramos aviso simplificado
+    // Si no hay token (usuario no re-autorizado), mostramos botón de conexión directa
     if (!fitAccessToken) {
         return (
             <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Heart size={14} className="text-rose-400" /> Google Fit
                 </h3>
-                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                    <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-800 font-semibold">
-                        Cierra sesión y vuelve a iniciar sesión con Google para autorizar el acceso a tus datos de Fit.
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                    <AlertCircle size={20} className="text-amber-500 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-semibold mb-4 leading-relaxed">
+                        Conecta tu cuenta para sincronizar sueño, pasos y ritmo cardíaco.
                     </p>
+                    <button
+                        onClick={() => {
+                            // Usamos el botón de login que ya sabe pedir los scopes necesarios
+                            // El LoginScreen maneja setFitToken y loadFitnessData
+                            window.location.reload(); // Forma más simple de activar el flow de login si el token falta
+                        }}
+                        className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md shadow-indigo-100"
+                    >
+                        <RefreshCw size={16} /> Conectar con Google Fit
+                    </button>
                 </div>
             </div>
         );
@@ -34,20 +52,21 @@ const FitnessPanel: React.FC = () => {
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Heart size={14} className="text-rose-400" /> Google Fit
                 </h3>
-                <p className="text-[10px] text-slate-500 mb-3 italic">
-                    Pulsa el botón para sincronizar tus bio-datos de hoy.
-                </p>
-                <button
-                    onClick={handleRefresh}
-                    className="w-full flex items-center justify-center gap-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-sm py-3 rounded-xl border border-emerald-200 transition-all active:scale-95 shadow-sm"
-                >
-                    <RefreshCw size={16} /> Vincular con Google Fit
-                </button>
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <RefreshCw className="text-indigo-500 animate-spin mb-3" size={24} />
+                    <p className="text-[10px] text-slate-500 font-medium italic px-4">
+                        Sincronizando bio-datos...
+                    </p>
+                </div>
             </div>
         );
     }
 
-    const { sleepHours, restingHeartRate, steps, activeCalories, lastFetched } = fitnessData;
+    const adjustment = manualSleepAdjustment[selectedDate] || 0;
+    const rawSleep = fitnessData.sleepHours;
+    // Combinar dato de Google Fit con ajuste manual
+    const sleepHours = rawSleep !== null ? Math.max(0, rawSleep + adjustment) : (adjustment > 0 ? adjustment : null);
+    const { restingHeartRate, steps, activeCalories, lastFetched } = fitnessData;
     
     // Check if ALL fields are null (indicates successful API call but no data found)
     const hasData = sleepHours !== null || restingHeartRate !== null || steps !== null || activeCalories !== null;
@@ -122,12 +141,40 @@ const FitnessPanel: React.FC = () => {
                             <Moon size={13} className="text-indigo-400" />
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Sueño</span>
                         </div>
-                        <p className={`text-xl font-black ${getSleepColor(sleepHours)}`}>
-                            {sleepHours !== null ? `${sleepHours}h` : '--'}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-medium">
-                            {sleepHours !== null ? (sleepHours >= 7 ? 'Óptimo ✓' : sleepHours >= 6 ? 'Sub-óptimo' : 'Insuficiente ⚠️') : 'Sin datos'}
-                        </p>
+                        <div className="flex items-end justify-between">
+                            <div>
+                                <p className={`text-xl font-black ${getSleepColor(sleepHours)}`}>
+                                    {sleepHours !== null ? `${sleepHours}h` : '--'}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                    {sleepHours !== null ? (sleepHours >= 7 ? 'Óptimo ✓' : sleepHours >= 6 ? 'Sub-óptimo' : 'Insuficiente ⚠️') : 'Sin datos'}
+                                </p>
+                            </div>
+                            
+                            {/* Ajuste Manual */}
+                            <div className="flex flex-col items-center gap-1">
+                                <button 
+                                    onClick={() => updateManualSleep(0.5)}
+                                    className="p-1 rounded-md bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors"
+                                    title="Añadir 30 min de sueño"
+                                >
+                                    <Activity size={10} className="rotate-90" />
+                                    <span className="text-[8px] font-bold">+0.5</span>
+                                </button>
+                                <button 
+                                    onClick={() => updateManualSleep(-0.5)}
+                                    className="p-1 rounded-md bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-400 transition-colors"
+                                    title="Quitar 30 min de sueño"
+                                >
+                                    <span className="text-[8px] font-bold">-0.5</span>
+                                </button>
+                            </div>
+                        </div>
+                        {adjustment !== 0 && (
+                            <div className="mt-1 text-[8px] font-bold text-indigo-400 italic bg-indigo-50/50 px-1.5 py-0.5 rounded-full inline-block">
+                                Ajustado manual: {adjustment > 0 ? '+' : ''}{adjustment}h
+                            </div>
+                        )}
                     </div>
 
                     {/* Ritmo Cardíaco */}

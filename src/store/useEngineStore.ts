@@ -32,8 +32,10 @@ interface EngineState {
   // Google Fit
   fitAccessToken: string | null;
   fitnessData: FitnessData | null;
+  manualSleepAdjustment: Record<string, number>; // Ajuste de horas por 'YYYY-MM-DD'
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
+  updateManualSleep: (hours: number) => void;
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
@@ -41,6 +43,7 @@ interface EngineState {
   addLog: (supplementId: string, timeStr: string, quantity?: number, note?: string) => void;
   removeLog: (id: string) => void;
   toggleFavorite: (supplementId: string) => void;
+  toggleLogVisibility: (id: string) => void;
   recalculate: () => void;
   // Derived helpers
   getLogsForDate: (date: string) => LogEvent[];
@@ -63,6 +66,7 @@ export const useEngineStore = create<EngineState>()(
 
       fitAccessToken: null,
       fitnessData: null,
+      manualSleepAdjustment: {},
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });
@@ -72,16 +76,40 @@ export const useEngineStore = create<EngineState>()(
         const { fitAccessToken, baseIq, selectedDate } = get();
         if (!fitAccessToken) return;
         
-        // Fetch data for the specific day being viewed
-        const data = await fetchFitnessData(fitAccessToken, selectedDate);
-        set({ fitnessData: data });
-        
-        // If we have sleep data, recalculate with adjusted IQ
-        if (data.sleepHours !== null && baseIq) {
-          const adjustedIq = calculateFitnessImpact(data, baseIq);
-          get().recalculate();
-          console.log(`Fitness IQ adjustment for ${selectedDate}: ${baseIq} → ${adjustedIq} (sleep: ${data.sleepHours}h, HR: ${data.restingHeartRate}bpm)`);
+        try {
+          // Fetch data for the specific day being viewed
+          const data = await fetchFitnessData(fitAccessToken, selectedDate);
+          
+          // Check if the API returned null (might be due to expired token)
+          if (!data.lastFetched && fitAccessToken) {
+            console.warn("Fitness data fetch failed. Token might be expired.");
+            // We don't clear it immediately to allow a retry or explicit re-auth
+            return;
+          }
+
+          set({ fitnessData: data });
+          
+          // If we have sleep data, recalculate with adjusted IQ
+          if (data.sleepHours !== null && baseIq) {
+            const adjustedIq = calculateFitnessImpact(data, baseIq);
+            get().recalculate();
+            console.log(`Fitness IQ adjustment for ${selectedDate}: ${baseIq} → ${adjustedIq} (sleep: ${data.sleepHours}h, HR: ${data.restingHeartRate}bpm)`);
+          }
+        } catch (error) {
+          console.error("Error in loadFitnessData:", error);
+          // If we get a clear auth error, we could clear the token here
         }
+      },
+      updateManualSleep: (hours: number) => {
+        const { selectedDate, manualSleepAdjustment } = get();
+        const currentAdj = manualSleepAdjustment[selectedDate] || 0;
+        set({
+          manualSleepAdjustment: {
+            ...manualSleepAdjustment,
+            [selectedDate]: Math.max(-24, Math.min(24, currentAdj + hours))
+          }
+        });
+        get().recalculate();
       },
 
       getLogsForDate: (date: string) => {
@@ -181,6 +209,7 @@ export const useEngineStore = create<EngineState>()(
             ...(note ? { note } : {})
           };
           const todayLogs = state.allLogs[date] || [];
+          
           const newAllLogs = {
             ...state.allLogs,
             [date]: [...todayLogs, newEvent]
@@ -191,13 +220,9 @@ export const useEngineStore = create<EngineState>()(
               .catch(err => console.error("Error saving to cloud:", err));
           }
           
-          const logsForSelected = newAllLogs[date] || [];
-          return { 
-            allLogs: newAllLogs,
-            chartData: MathEngine.calculateDailyPerformance(logsForSelected, state.baseIq || 133),
-            warnings: evaluateInteractions(logsForSelected)
-          };
+          return { allLogs: newAllLogs };
         });
+        get().recalculate();
       },
 
       removeLog: (id: string) => {
@@ -208,12 +233,24 @@ export const useEngineStore = create<EngineState>()(
           if (state.user) {
             setDoc(doc(db, 'users', state.user.uid), { allLogs: newAllLogs }, { merge: true });
           }
-          return { 
-            allLogs: newAllLogs,
-            chartData: MathEngine.calculateDailyPerformance(newDateLogs, state.baseIq || 133),
-            warnings: evaluateInteractions(newDateLogs)
-          };
+          return { allLogs: newAllLogs };
         });
+        get().recalculate();
+      },
+
+      toggleLogVisibility: (id: string) => {
+        set((state) => {
+          const date = state.selectedDate;
+          const newDateLogs = (state.allLogs[date] || []).map(log => 
+            log.id === id ? { ...log, hidden: !log.hidden } : log
+          );
+          const newAllLogs = { ...state.allLogs, [date]: newDateLogs };
+          if (state.user) {
+            setDoc(doc(db, 'users', state.user.uid), { allLogs: newAllLogs }, { merge: true });
+          }
+          return { allLogs: newAllLogs };
+        });
+        get().recalculate();
       },
 
       toggleFavorite: (supplementId: string) => {
@@ -232,17 +269,23 @@ export const useEngineStore = create<EngineState>()(
       },
 
       recalculate: () => {
-        const { allLogs, selectedDate, baseIq, fitnessData } = get();
+        const { allLogs, selectedDate, baseIq, fitnessData, manualSleepAdjustment } = get();
         const logs = allLogs[selectedDate] || [];
         
-        // Determinar el CI de base real para la gráfica (base estática vs ajustada por Fit)
-        let effectiveBaseIq = baseIq || 133;
+        const staticBaseIq = baseIq || 133;
+        let effectiveBaseIq = staticBaseIq;
         if (fitnessData) {
-          effectiveBaseIq = calculateFitnessImpact(fitnessData, effectiveBaseIq);
+          // Ajustar los datos de fitness con el offset manual antes de calcular el impacto
+          const adj = manualSleepAdjustment[selectedDate] || 0;
+          const adjustedFitness = {
+            ...fitnessData,
+            sleepHours: fitnessData.sleepHours !== null ? Math.max(0, fitnessData.sleepHours + adj) : (adj > 0 ? adj : null)
+          };
+          effectiveBaseIq = calculateFitnessImpact(adjustedFitness, staticBaseIq);
         }
 
         set({
-          chartData: MathEngine.calculateDailyPerformance(logs, effectiveBaseIq),
+          chartData: MathEngine.calculateDailyPerformance(logs, effectiveBaseIq, staticBaseIq),
           warnings: evaluateInteractions(logs)
         });
       }
@@ -254,13 +297,21 @@ export const useEngineStore = create<EngineState>()(
           favorites: state.favorites,
           baseIq: state.baseIq,
           hasCompletedAssessment: state.hasCompletedAssessment,
-          selectedDate: state.selectedDate
+          selectedDate: state.selectedDate,
+          fitAccessToken: state.fitAccessToken,
+          manualSleepAdjustment: state.manualSleepAdjustment
       }), 
       onRehydrateStorage: () => (state) => {
         if (state) {
             // Snap selected date back to today when reloading
             state.selectedDate = getTodayStr();
             state.recalculate();
+            
+            // Auto-load fitness data if we have a token preserved
+            if (state.fitAccessToken) {
+              console.log("Rehydration: Found fitAccessToken, auto-loading data...");
+              setTimeout(() => state.loadFitnessData(), 1000);
+            }
         }
       }
     }

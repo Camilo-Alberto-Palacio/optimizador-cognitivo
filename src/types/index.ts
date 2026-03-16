@@ -21,6 +21,7 @@ export interface LogEvent {
     timeStr: string;      // ej: '14:30', '08:00'
     quantity?: number;    // ej: 2, 3 (multiplicador de dosis)
     note?: string;        // nota libre opcional
+    hidden?: boolean;     // si está oculto/desactivado
 }
 
 export interface ChartDataPoint {
@@ -29,6 +30,10 @@ export interface ChartDataPoint {
     optimized: number;
     iq: number;
     flow: boolean;
+    // Metadatos para el desglose
+    iqBase: number;
+    iqFitness: number;
+    iqBoost: number;
 }
 
 export interface Warning {

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Clock, Plus, Star, Search, Activity, Trash2, Hash, ChevronLeft, ChevronRight, BookOpen, FileText, TrendingDown } from 'lucide-react';
+import { Clock, Plus, Star, Search, Activity, Trash2, Hash, ChevronLeft, ChevronRight, BookOpen, FileText, TrendingDown, Eye, EyeOff } from 'lucide-react';
 import { useEngineStore, getTodayStr } from '../store/useEngineStore';
 import { SUPPLEMENT_CATALOG } from '../data/supplements';
 
 const ControlPanel: React.FC = () => {
-  const { allLogs, selectedDate, favorites, addLog, removeLog, toggleFavorite, setSelectedDate } = useEngineStore();
+  const { allLogs, selectedDate, favorites, addLog, removeLog, toggleFavorite, setSelectedDate, toggleLogVisibility } = useEngineStore();
 
   const logs = allLogs[selectedDate] || [];
   const today = getTodayStr();
@@ -274,8 +274,7 @@ const ControlPanel: React.FC = () => {
       <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-200">
          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
            <BookOpen size={14} className="text-slate-400" /> Bitácora del {formatDisplayDate(selectedDate)} ({logs.length})
-        </h3>
-
+         </h3>
         <div className="flex flex-col gap-2">
            {sortedLogs.length === 0 ? (
              <div className="text-center py-6 text-slate-400 text-xs font-medium">No hay registros para este día.</div>
@@ -283,33 +282,47 @@ const ControlPanel: React.FC = () => {
              sortedLogs.map(log => {
                const def = SUPPLEMENT_CATALOG.find(s => s.id === log.supplementId);
                return (
-                 <div key={log.id} className={`border rounded-xl p-3 shadow-sm ${def && def.effectK < 0 ? 'bg-rose-50/30 border-rose-100' : 'bg-white border-slate-200'}`}>
+                 <div key={log.id} className={`border rounded-xl p-3 shadow-sm transition-all ${log.hidden ? 'opacity-40 grayscale bg-slate-100 border-slate-200' : (def && def.effectK < 0 ? 'bg-rose-50/30 border-rose-100' : 'bg-white border-slate-200')}`}>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
-                         <span className={`${def && def.effectK < 0 ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'} text-xs font-black px-2 py-1 rounded-md`}>{log.timeStr}</span>
+                         <span className={`${log.hidden ? 'bg-slate-200 text-slate-500' : (def && def.effectK < 0 ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700')} text-xs font-black px-2 py-1 rounded-md`}>{log.timeStr}</span>
                          <div>
                            <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
                              {def?.name || 'Desconocido'} 
                              {(log.quantity && log.quantity > 1) ? (
-                               <span className={`${def && def.effectK < 0 ? 'bg-rose-600' : 'bg-indigo-600'} text-white text-[10px] px-1.5 py-0.5 rounded-md`}>x{log.quantity}</span>
+                               <span className={`${log.hidden ? 'bg-slate-400' : (def && def.effectK < 0 ? 'bg-rose-600' : 'bg-indigo-600')} text-white text-[10px] px-1.5 py-0.5 rounded-md`}>x{log.quantity}</span>
                              ) : null}
-                             {def && def.effectK < 0 && (
+                             {!log.hidden && def && def.effectK < 0 && (
                                <span className="flex items-center gap-0.5 text-[9px] font-black text-rose-600 uppercase tracking-tighter bg-rose-100/50 px-1.5 py-0.5 rounded">
                                  <TrendingDown size={10} /> Impacto Negativo
                                </span>
                              )}
+                             {log.hidden && (
+                               <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter bg-slate-200 px-1.5 py-0.5 rounded">Desactivado</span>
+                             )}
                            </p>
                          </div>
                       </div>
-                      <button 
-                        onClick={() => removeLog(log.id)}
-                        className={`${def && def.effectK < 0 ? 'text-rose-600 bg-rose-100 hover:bg-rose-200' : 'text-rose-500 bg-rose-50 hover:bg-rose-100'} transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold`}
-                        title="Eliminar evento"
-                      >
-                        <Trash2 size={14} /> Borrar
-                      </button>
+                      <div className="flex gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => toggleLogVisibility(log.id)}
+                          className={`p-1.5 rounded-lg border transition-all ${log.hidden ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-300 hover:text-indigo-500'}`}
+                          title={log.hidden ? "Activar impacto" : "Ocultar / Desactivar impacto"}
+                        >
+                          {log.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => removeLog(log.id)}
+                          className={`${def && def.effectK < 0 ? 'text-rose-600 bg-rose-100 hover:bg-rose-200' : 'text-rose-500 bg-rose-50 hover:bg-rose-100'} transition-colors px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-xs font-bold`}
+                          title="Eliminar evento"
+                        >
+                          <Trash2 size={14} /> Borrar
+                        </button>
+                      </div>
                     </div>
-                    {log.note && (
+                    {log.note && !log.hidden && (
                       <p className="mt-2 ml-14 text-xs text-slate-400 italic border-t border-slate-100 pt-2">💬 {log.note}</p>
                     )}
                  </div>

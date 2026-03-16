@@ -68,15 +68,24 @@ const HeaderStats: React.FC = () => {
                 </div>
 
                 <div className="flex gap-3">
-                    <div className="bg-white shadow-xl shadow-slate-200/50 p-4 rounded-3xl border border-slate-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center">
+                    <div className="group relative bg-white shadow-xl shadow-slate-200/50 p-4 rounded-3xl border border-slate-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center cursor-help">
+                        {/* Tooltip explanation for BASE */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
+                            <p className="font-black text-slate-300 uppercase mb-1 flex items-center gap-1"><Info size={10}/> CI BASE</p>
+                            Es tu potencial natural medido en el test inicial. Es el punto de partida sobre el cual se aplican los ajustes de salud y suplementos.
+                        </div>
                         <p className="text-[8px] text-slate-400 font-black uppercase mb-1">Tu CI Base</p>
                         <p className="text-xl md:text-2xl font-black text-slate-800">{baseIq}</p>
                     </div>
+
                     <div className="group relative bg-indigo-50 shadow-xl shadow-indigo-200/50 p-4 rounded-3xl border border-indigo-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center cursor-help">
                         {/* Tooltip explanation for PEAK */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
-                            <p className="font-black text-indigo-300 uppercase mb-1 flex items-center gap-1"><Info size={10}/> ¿Qué es el PEAK?</p>
-                            Es el punto máximo de potencial cognitivo que el motor proyecta para este día, basado en tus suplementos, horas de sueño y bio-datos actuales.
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
+                            <p className="font-black text-indigo-300 uppercase mb-1 flex items-center gap-1"><Info size={10}/> PEAK ESTIMADO</p>
+                            Calculado como: <br/>
+                            <span className="text-indigo-200 font-bold">Base</span> + <span className="text-rose-300">Ajuste Salud</span> + <span className="text-emerald-300">Impulso Bio-químico</span>.
+                            <br/><br/>
+                            Representa el máximo potencial alcanzable durante el día de hoy.
                         </div>
                         <p className="text-[8px] text-indigo-500 font-black uppercase mb-1">Peak Estimado</p>
                         <p className="text-xl md:text-2xl font-black text-indigo-700">{maxIq}</p>
