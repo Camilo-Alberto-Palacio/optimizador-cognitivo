@@ -33,8 +33,14 @@ interface EngineState {
   fitAccessToken: string | null;
   fitnessData: FitnessData | null;
   manualSleepAdjustment: Record<string, number>; // Ajuste de horas por 'YYYY-MM-DD'
+  // Analytics
+  activeView: 'dashboard' | 'analytics';
+  weeklyFitnessData: Record<string, FitnessData>;
+  isLoadingWeekly: boolean;
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
+  loadWeeklyFitnessData: () => Promise<void>;
+  setActiveView: (view: 'dashboard' | 'analytics') => void;
   updateManualSleep: (hours: number) => void;
   // Methods
   setBaseIq: (iq: number) => void;
@@ -67,10 +73,15 @@ export const useEngineStore = create<EngineState>()(
       fitAccessToken: null,
       fitnessData: null,
       manualSleepAdjustment: {},
+      activeView: 'dashboard',
+      weeklyFitnessData: {},
+      isLoadingWeekly: false,
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });
       },
+
+      setActiveView: (view) => set({ activeView: view }),
 
       loadFitnessData: async () => {
         const { fitAccessToken, baseIq, selectedDate } = get();
@@ -106,6 +117,21 @@ export const useEngineStore = create<EngineState>()(
           }
         }
       },
+
+      loadWeeklyFitnessData: async () => {
+        const { fitAccessToken } = get();
+        if (!fitAccessToken) return;
+        set({ isLoadingWeekly: true });
+        try {
+          const { fetchWeeklyFitnessData } = await import('../services/googleFit');
+          const data = await fetchWeeklyFitnessData(fitAccessToken);
+          set({ weeklyFitnessData: data, isLoadingWeekly: false });
+        } catch (error) {
+          console.error("Error loading weekly fit data:", error);
+          set({ isLoadingWeekly: false });
+        }
+      },
+
       updateManualSleep: (hours: number) => {
         const { selectedDate, manualSleepAdjustment, user } = get();
         const currentAdj = Number(manualSleepAdjustment[selectedDate] || 0);
@@ -317,7 +343,8 @@ export const useEngineStore = create<EngineState>()(
           hasCompletedAssessment: state.hasCompletedAssessment,
           selectedDate: state.selectedDate,
           fitAccessToken: state.fitAccessToken,
-          manualSleepAdjustment: state.manualSleepAdjustment
+          manualSleepAdjustment: state.manualSleepAdjustment,
+          weeklyFitnessData: state.weeklyFitnessData
       }), 
       onRehydrateStorage: () => (state) => {
         if (state) {

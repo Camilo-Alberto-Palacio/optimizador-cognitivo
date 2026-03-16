@@ -234,6 +234,102 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
   }
 };
 
+// Recupera datos de los últimos 7 días de forma eficiente
+export const fetchWeeklyFitnessData = async (accessToken: string): Promise<Record<string, FitnessData>> => {
+  const result: Record<string, FitnessData> = {};
+  const today = new Date();
+  
+  // Rango total de 7 días
+  const end = new Date(today);
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(today);
+  start.setDate(start.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
+
+  const startMs = start.getTime();
+  const endMs = Math.min(end.getTime(), Date.now());
+
+  try {
+    // 1. Obtener todas las sesiones de sueño de la semana
+    const sleepSessions = await fetchSessions(accessToken, startMs - (12 * 3600000), endMs); // Extra 12h atrás para capturar la primera noche
+    
+    // 2. Obtener buckets diarios para Pasos y Ritmo Cardíaco
+    // Google Fit puede agrupar por día (86400000 ms)
+    const dayMillis = 86400000;
+    const [stepsRes, hrRes] = await Promise.all([
+      fetchAggregateForRange(accessToken, 'com.google.step_count.delta', startMs, endMs, dayMillis),
+      fetchAggregateForRange(accessToken, 'com.google.heart_rate.bpm', startMs, endMs, dayMillis)
+    ]);
+
+    // Inicializar el record con los 7 días
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const dStr = d.toISOString().split('T')[0];
+      result[dStr] = { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: Date.now() };
+    }
+
+    // Procesar Pasos (buckets)
+    if (stepsRes?.bucket) {
+      stepsRes.bucket.forEach((bucket: any) => {
+        const date = new Date(Number(bucket.startTimeMillis));
+        const dStr = date.toISOString().split('T')[0];
+        let daySteps = 0;
+        bucket.dataset?.[0]?.point?.forEach((p: any) => { daySteps += (p.value?.[0]?.intVal ?? 0); });
+        if (result[dStr]) result[dStr].steps = daySteps || null;
+      });
+    }
+
+    // Procesar HR (buckets)
+    if (hrRes?.bucket) {
+      hrRes.bucket.forEach((bucket: any) => {
+        const date = new Date(Number(bucket.startTimeMillis));
+        const dStr = date.toISOString().split('T')[0];
+        let hrValues: number[] = [];
+        bucket.dataset?.[0]?.point?.forEach((p: any) => {
+          const val = p.value?.[2]?.fpVal || p.value?.[0]?.fpVal || 0;
+          if (val > 0) hrValues.push(val);
+        });
+        if (result[dStr] && hrValues.length) result[dStr].restingHeartRate = Math.round(Math.min(...hrValues));
+      });
+    }
+
+    // Procesar Sueño (Sessions)
+    if (sleepSessions?.session) {
+      sleepSessions.session.forEach((s: any) => {
+        if (s.activityType === 72) {
+          const sessionEnd = new Date(Number(s.endTimeMillis));
+          const dStr = sessionEnd.toISOString().split('T')[0]; // Atribuimos el sueño al día en que despiertas
+          if (result[dStr]) {
+            const hours = (Number(s.endTimeMillis) - Number(s.startTimeMillis)) / 3600000;
+            result[dStr].sleepHours = Math.round(((result[dStr].sleepHours || 0) + hours) * 10) / 10;
+          }
+        }
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching historical Fit data:", error);
+    return result;
+  }
+};
+
+// Helper para rangos largos con buckets
+const fetchAggregateForRange = async (token: string, dataTypeName: string, startMs: number, endMs: number, bucketMs: number) => {
+  const response = await fetch(FITNESS_BASE, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      aggregateBy: [{ dataTypeName }],
+      bucketByTime: { durationMillis: bucketMs },
+      startTimeMillis: startMs,
+      endTimeMillis: endMs,
+    }),
+  });
+  return response.ok ? await response.json() : null;
+};
+
 // Calcula el impacto de los datos de fitness sobre el IQ base (penalizadores/bonificaciones)
 export const calculateFitnessImpact = (fitness: FitnessData, baseIq: number): number => {
   let adjusted = baseIq;

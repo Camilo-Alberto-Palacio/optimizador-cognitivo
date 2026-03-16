@@ -11,9 +11,10 @@ import LoginScreen from './components/LoginScreen';
 import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
 import FitnessPanel from './components/FitnessPanel';
 import JournalTimeline from './components/JournalTimeline';
+import AnalyticsDashboard from './components/Analytics/AnalyticsDashboard';
 
 const App: React.FC = () => {
-  const { user, authLoading, setUser } = useEngineStore();
+  const { user, authLoading, setUser, activeView, setActiveView, loadWeeklyFitnessData } = useEngineStore();
 
   useEffect(() => {
     // Escucha en tiempo real si el usuario inicia o cierra sesión
@@ -47,19 +48,44 @@ const App: React.FC = () => {
         <HeaderStats />
         <WarningAlerts />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Barra Lateral Izquierda: Datos de Salud y Bitácora */}
-          <div className="lg:col-span-3 flex flex-col gap-6">
-            <FitnessPanel />
-            <JournalTimeline />
-          </div>
-
-          {/* Columna Principal: Visualización y Acción */}
-          <div className="lg:col-span-9 flex flex-col gap-6">
-            <MasterChart />
-            <SupplementSelector />
+        {/* Navigation Tabs (v8.0 PRO) */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white border border-slate-200 p-1 rounded-2xl flex gap-1 shadow-sm">
+            <button 
+              onClick={() => setActiveView('dashboard')}
+              className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${activeView === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Dashboard Diario
+            </button>
+            <button 
+              onClick={() => {
+                setActiveView('analytics');
+                loadWeeklyFitnessData();
+              }}
+              className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${activeView === 'analytics' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Tendencias PRO
+            </button>
           </div>
         </div>
+
+        {activeView === 'dashboard' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Barra Lateral Izquierda: Datos de Salud y Bitácora */}
+            <div className="lg:col-span-3 flex flex-col gap-6">
+              <FitnessPanel />
+              <JournalTimeline />
+            </div>
+
+            {/* Columna Principal: Visualización y Acción */}
+            <div className="lg:col-span-9 flex flex-col gap-6">
+              <MasterChart />
+              <SupplementSelector />
+            </div>
+          </div>
+        ) : (
+          <AnalyticsDashboard />
+        )}
 
         <FooterAnalysis />
       </div>
