@@ -1,16 +1,42 @@
-# React + Vite
+# Optimizador Cognitivo v8.0 Enterprise 🧠⚡
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Plataforma avanzada de biohacking diseñada para monitorear, predecir y optimizar el rendimiento cognitivo mediante farmacocinética simulada y bio-sincronización en tiempo real.
 
-Currently, two official plugins are available:
+## 🚀 Vision General
+Este sistema utiliza un motor matemático de decaimiento exponencial para calcular tu **Índice Cognitivo (CI)** actual basándose en:
+- **Biometrías (Google Fit)**: Sueño, pasos y ritmo cardíaco.
+- **Suplementación (Journal)**: Registro de nootrópicos, estimulantes y hábitos con curvas de efecto realistas.
+- **Base Cognitiva**: Evaluación inicial de CI.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Versiones Disponibles
+- **[Main] (Producción)**: Versión estable con layout optimizado, bitácora lateral y sincronización Google Fit blindada.
+- **[PRO] (feature/advanced-analytics)**: Versión experimental con tendencias de 7 días y pronto, matrices de correlación inteligente.
 
-## React Compiler
+## 🏗️ Arquitectura Técnica
+- **Frontend**: React + Vite + TypeScript.
+- **Estilos**: TailwindCSS (Modern Glassmorphism & Vibrant UI).
+- **Estado**: Zustand v5 (Persistencia con Firestore Sync).
+- **Base de Datos**: Firebase Firestore (NoSQL).
+- **Autenticación**: Firebase Auth (Google OAuth).
+- **Visualización**: Recharts para curvas farmacocinéticas dinámicas.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🧬 Motor Matemático
+El sistema calcula el CI Real mediante la fórmula:
+`CI_Real = CI_Base + Ajuste_Salud(Fit) + Suma(Impacto_Suplementos(t))`
 
-## Expanding the ESLint configuration
+- El impacto de cada suplemento decae según su `half-life` (vida media) definida en el catálogo.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 📦 Instalación y Desarrollo
+1. Clonar repositorio: `git clone ...`
+2. Instalar dependencias: `npm install`
+3. Variables de Entorno: Configurar `.env` con las claves de Firebase.
+4. Ejecutar: `npm run dev`
+
+## 📊 Documentación Adicional
+Puedes encontrar más detalles en la carpeta `/diagramas`:
+- `architecture.puml`: Mapa de componentes.
+- `dataflow.puml`: Flujo de bio-sincronización.
+- `state_structure.puml`: Definición del estado global.
+
+---
+*Desarrollado para Biohackers de alto rendimiento.*
