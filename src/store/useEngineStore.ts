@@ -83,32 +83,44 @@ export const useEngineStore = create<EngineState>()(
           // Check if the API returned null (might be due to expired token)
           if (!data.lastFetched && fitAccessToken) {
             console.warn("Fitness data fetch failed. Token might be expired.");
-            // We don't clear it immediately to allow a retry or explicit re-auth
+            // Marcamos como cargado (aunque sea con nulos) para detener el spinner de carga
+            set({ fitnessData: { ...data, lastFetched: Date.now() } });
             return;
           }
 
           set({ fitnessData: data });
+          get().recalculate();
           
-          // If we have sleep data, recalculate with adjusted IQ
           if (data.sleepHours !== null && baseIq) {
-            const adjustedIq = calculateFitnessImpact(data, baseIq);
-            get().recalculate();
-            console.log(`Fitness IQ adjustment for ${selectedDate}: ${baseIq} → ${adjustedIq} (sleep: ${data.sleepHours}h, HR: ${data.restingHeartRate}bpm)`);
+            console.log(`Fitness IQ adjustment for ${selectedDate}: ${baseIq} → ${calculateFitnessImpact(data, baseIq)} (sleep: ${data.sleepHours}h)`);
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Error in loadFitnessData:", error);
-          // If we get a clear auth error, we could clear the token here
+          // Detener el estado de carga incluso en error grave
+          set({ fitnessData: get().fitnessData || { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: Date.now() } });
+          
+          if (error.message === 'UNAUTHORIZED') {
+             console.warn("Token de Google Fit expirado. Limpiando para re-vincular.");
+             set({ fitAccessToken: null, fitnessData: null });
+             get().recalculate();
+          }
         }
       },
       updateManualSleep: (hours: number) => {
-        const { selectedDate, manualSleepAdjustment } = get();
-        const currentAdj = manualSleepAdjustment[selectedDate] || 0;
-        set({
-          manualSleepAdjustment: {
-            ...manualSleepAdjustment,
-            [selectedDate]: Math.max(-24, Math.min(24, currentAdj + hours))
-          }
-        });
+        const { selectedDate, manualSleepAdjustment, user } = get();
+        const currentAdj = Number(manualSleepAdjustment[selectedDate] || 0);
+        const newAdjustment = {
+          ...manualSleepAdjustment,
+          [selectedDate]: Math.round(Math.max(-24, Math.min(24, currentAdj + Number(hours))) * 2) / 2
+        };
+        
+        set({ manualSleepAdjustment: newAdjustment });
+        
+        if (user) {
+          setDoc(doc(db, 'users', user.uid), { manualSleepAdjustment: newAdjustment }, { merge: true })
+            .catch(err => console.error("Error saving manual sleep to cloud:", err));
+        }
+        
         get().recalculate();
       },
 
@@ -131,6 +143,10 @@ export const useEngineStore = create<EngineState>()(
               
               if (cloudBaseIq !== undefined) {
                   set({ baseIq: cloudBaseIq, hasCompletedAssessment: cloudBaseIq !== null });
+              }
+
+              if (data.manualSleepAdjustment) {
+                set({ manualSleepAdjustment: data.manualSleepAdjustment });
               }
 
               if (cloudAllLogs) {
@@ -276,10 +292,12 @@ export const useEngineStore = create<EngineState>()(
         let effectiveBaseIq = staticBaseIq;
         if (fitnessData) {
           // Ajustar los datos de fitness con el offset manual antes de calcular el impacto
-          const adj = manualSleepAdjustment[selectedDate] || 0;
+          const adj = Number(manualSleepAdjustment[selectedDate] || 0);
+          const rawSleep = fitnessData.sleepHours !== null ? Number(fitnessData.sleepHours) : null;
+          
           const adjustedFitness = {
             ...fitnessData,
-            sleepHours: fitnessData.sleepHours !== null ? Math.max(0, fitnessData.sleepHours + adj) : (adj > 0 ? adj : null)
+            sleepHours: rawSleep !== null ? Math.max(0, rawSleep + adj) : (adj > 0 ? adj : null)
           };
           effectiveBaseIq = calculateFitnessImpact(adjustedFitness, staticBaseIq);
         }

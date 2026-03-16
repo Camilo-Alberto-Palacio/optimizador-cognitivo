@@ -14,7 +14,7 @@ const getDayRange = (dateStr: string) => {
   const end = new Date(dateStr + 'T23:59:59');
   return {
     startMs: start.getTime(),
-    endMs: end.getTime(),
+    endMs: Math.min(end.getTime(), Date.now()), // No pedir datos del futuro
   };
 };
 
@@ -50,7 +50,8 @@ const fetchAggregate = async (token: string, dataTypeName: string, startMs: numb
   });
 
   if (!response.ok) {
-    const err = await response.json();
+    if (response.status === 401) throw new Error('UNAUTHORIZED');
+    const err = await response.json().catch(() => ({}));
     console.error(`Fitness API error [${dataTypeName}]:`, err);
     return null;
   }
@@ -132,10 +133,15 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
           const segmentType = p.value?.[0]?.intVal ?? 0;
           if (segmentType === 2 || (segmentType >= 4 && segmentType <= 6)) {
-            allIntervals.push({
-              start: Number(BigInt(p.startTimeNanos) / 1000000n),
-              end: Number(BigInt(p.endTimeNanos) / 1000000n)
-            });
+            // Parsing más robusto: maneja strings o números y evita precisión excesiva innecesaria
+            const sStr = p.startTimeNanos?.toString();
+            const eStr = p.endTimeNanos?.toString();
+            if (sStr && eStr) {
+               allIntervals.push({
+                 start: Math.floor(Number(sStr.slice(0, -6))),
+                 end: Math.floor(Number(eStr.slice(0, -6)))
+               });
+            }
           }
         });
       });
@@ -146,10 +152,14 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
       sleepActivityRes.bucket.forEach((bucket: any) => {
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
           if ((p.value?.[0]?.intVal ?? 0) === 72) {
-            allIntervals.push({
-              start: Number(BigInt(p.startTimeNanos) / 1000000n),
-              end: Number(BigInt(p.endTimeNanos) / 1000000n)
-            });
+            const sStr = p.startTimeNanos?.toString();
+            const eStr = p.endTimeNanos?.toString();
+            if (sStr && eStr) {
+               allIntervals.push({
+                 start: Math.floor(Number(sStr.slice(0, -6))),
+                 end: Math.floor(Number(eStr.slice(0, -6)))
+               });
+            }
           }
         });
       });

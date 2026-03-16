@@ -29,6 +29,7 @@ googleProvider.setCustomParameters({
 // Scopes de Google Fit para datos de salud
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.activity.read');
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.sleep.read');
+googleProvider.addScope('https://www.googleapis.com/auth/fitness.body.read');
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.heart_rate.read');
 
 // Funciones de conveniencia para exportar y usar en los componentes

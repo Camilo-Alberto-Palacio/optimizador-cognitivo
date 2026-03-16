@@ -71,7 +71,7 @@ const FitnessPanel: React.FC = () => {
     // Check if ALL fields are null (indicates successful API call but no data found)
     const hasData = sleepHours !== null || restingHeartRate !== null || steps !== null || activeCalories !== null;
 
-    const adjustedIq = (baseIq && fitnessData) ? calculateFitnessImpact(fitnessData, baseIq) : null;
+    const adjustedIq = (baseIq && fitnessData) ? calculateFitnessImpact({ ...fitnessData, sleepHours }, baseIq) : null;
     const iqDelta = adjustedIq && baseIq ? adjustedIq - baseIq : 0;
 
     const getSleepColor = (h: number | null) => {
