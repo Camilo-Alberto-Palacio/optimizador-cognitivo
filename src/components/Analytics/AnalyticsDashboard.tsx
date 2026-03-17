@@ -4,8 +4,7 @@ import { TrendingUp, Calendar, Zap } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
 
 const AnalyticsDashboard: React.FC = () => {
-    const { baseIq, getHistoricalSeries } = useEngineStore();
-    const staticBaseIq = baseIq || 133;
+    const { getHistoricalSeries } = useEngineStore();
     const weeklyTrends = useMemo(() => {
         const series = getHistoricalSeries(7);
         return series.map(s => {
