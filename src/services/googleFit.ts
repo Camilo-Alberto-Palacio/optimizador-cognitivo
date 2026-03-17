@@ -12,41 +12,54 @@ const FITNESS_BASE = 'https://www.googleapis.com/fitness/v1/users/me/dataset:agg
 const getDayRange = (dateStr: string) => {
   const start = new Date(dateStr + 'T00:00:00');
   const end = new Date(dateStr + 'T23:59:59');
+  
+  // Usar fecha local del sistema para comparar "hoy"
+  const now = new Date();
+  const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const isToday = dateStr === localToday;
+  
   return {
     startMs: start.getTime(),
-    endMs: Math.min(end.getTime(), Date.now()), // No pedir datos del futuro
+    endMs: isToday ? (Date.now() + 300000) : end.getTime(), // 5 min buffer if today
   };
 };
 
-// Construye un rango para capturar el sueño de la noche anterior (18:00 día anterior - 12:00 día actual)
+// Rango de sueño: desde 12h antes del día hasta el momento actual (cubre noche + siestas)
 const getNightSleepRange = (dateStr: string) => {
   const currentDay = new Date(dateStr + 'T00:00:00');
   const start = new Date(currentDay);
   start.setDate(start.getDate() - 1);
-  start.setHours(18, 0, 0, 0);
+  start.setHours(12, 0, 0, 0); // Desde mediodía de ayer
   
   const end = new Date(currentDay);
-  end.setHours(14, 0, 0, 0); // Extendido a las 2 PM para capturar despertares tardíos
+  end.setDate(end.getDate() + 1); // Hasta mediodía del día siguiente
+  end.setHours(12, 0, 0, 0);
   
   return {
     startMs: start.getTime(),
-    endMs: Math.min(end.getTime(), Date.now()), // No pedir datos del futuro
+    endMs: Math.min(end.getTime(), Date.now()), // No pedir el futuro
   };
 };
 
-const fetchAggregate = async (token: string, dataTypeName: string, startMs: number, endMs: number) => {
+const fetchAggregate = async (token: string, dataTypeName: string, startMs: number, endMs: number, dataSourceId?: string, bucketMs?: number) => {
+  const duration = endMs - startMs;
+  const body: any = {
+    aggregateBy: [dataSourceId ? { dataSourceId } : { dataTypeName }],
+    bucketByTime: { durationMillis: bucketMs || duration },
+    startTimeMillis: startMs,
+    endTimeMillis: endMs,
+  };
+  
+  // Log de auditoría para depurar rangos y tipos
+  console.log(`[GoogleFit API] Requesting ${dataTypeName} (${new Date(startMs).toLocaleTimeString()} - ${new Date(endMs).toLocaleTimeString()})`);
+
   const response = await fetch(FITNESS_BASE, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      aggregateBy: [{ dataTypeName }],
-      bucketByTime: { durationMillis: endMs - startMs },
-      startTimeMillis: startMs,
-      endTimeMillis: endMs,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -56,7 +69,9 @@ const fetchAggregate = async (token: string, dataTypeName: string, startMs: numb
     return null;
   }
   const rawData = await response.json();
-  // console.log(`Fitness Raw [${dataTypeName}]:`, rawData);
+  if (rawData.bucket?.length > 1) {
+     console.log(`[GoogleFit API] Received ${rawData.bucket.length} buckets for ${dataTypeName}`);
+  }
   return rawData;
 };
 
@@ -107,17 +122,25 @@ const mergeSleepIntervals = (intervals: SleepInterval[]): SleepInterval[] => {
 };
 
 export const fetchFitnessData = async (accessToken: string, targetDate: string): Promise<FitnessData> => {
-  const { startMs: dayStart, endMs: dayEnd } = getDayRange(targetDate);
-  const { startMs: sleepStart, endMs: sleepEnd } = getNightSleepRange(targetDate);
-
-  console.log(`Fetching Fit for ${targetDate}. Range: ${new Date(dayStart).toLocaleString()} - ${new Date(dayEnd).toLocaleString()}`);
-
   try {
+    const { startMs: dayStart, endMs: dayEnd } = getDayRange(targetDate);
+    const { startMs: sleepStart, endMs: sleepEnd } = getNightSleepRange(targetDate);
+    
+    console.log(`Fetching Fit for ${targetDate}. Range: ${new Date(dayStart).toLocaleString()} - ${new Date(dayEnd).toLocaleString()}`);
+
+    const now = new Date();
+    const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const isToday = targetDate === localToday;
+
+    console.log(`[GoogleFit] Fetching ${targetDate} (isToday: ${isToday})`);
+
     const [sleepRes, sleepActivityRes, sleepSessionsRes, hrRes, stepsRes, calRes] = await Promise.all([
       fetchAggregate(accessToken, 'com.google.sleep.segment', sleepStart, sleepEnd),
       fetchAggregate(accessToken, 'com.google.activity.segment', sleepStart, sleepEnd),
       fetchSessions(accessToken, sleepStart, sleepEnd),
-      fetchAggregate(accessToken, 'com.google.heart_rate.bpm', dayStart, dayEnd),
+      // FC con buckets de 1 hora para asegurar captura de mínimos reales
+      fetchAggregate(accessToken, 'com.google.heart_rate.bpm', dayStart, dayEnd, undefined, 3600000),
+      // Pasos: Dejar que Google Fit fusione fuentes automáticamente (sin dataSourceId restrictivo)
       fetchAggregate(accessToken, 'com.google.step_count.delta', dayStart, dayEnd),
       fetchAggregate(accessToken, 'com.google.calories.expended', dayStart, dayEnd),
     ]);
@@ -163,7 +186,8 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
     // 3. Por Sesiones oficiales
     if (sleepSessionsRes?.session) {
       sleepSessionsRes.session.forEach((s: any) => {
-        if (s.activityType === 72) {
+        // Tipos de sueño: 72 (Sleep), 109 (Light sleep), 110 (Deep sleep), 111 (REM sleep), 112 (Awake during sleep session)
+        if (s.activityType === 72 || (s.activityType >= 109 && s.activityType <= 112)) {
           allIntervals.push({
             start: Number(s.startTimeMillis),
             end: Number(s.endTimeMillis)
@@ -184,33 +208,57 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
     }
 
     // --- PARSEO DE RITMO CARDIACO ---
-    // Buscamos el mínimo del día para aproximar el Resting Heart Rate
     let restingHeartRate: number | null = null;
     if (hrRes?.bucket) {
-      let hrValues: number[] = [];
+      const hrValues: number[] = [];
       hrRes.bucket.forEach((bucket: any) => {
-        bucket.dataset?.[0]?.point?.forEach((p: any) => {
-          // Index 2 suele ser el min en resúmenes, pero en bpm raw/aggregateBy dataTypeName: bpm
-          // obtenemos buckets con min, max, avg si usamos aggregateBy.
-          const val = p.value?.[2]?.fpVal || p.value?.[0]?.fpVal || 0;
-          if (val > 0) hrValues.push(val);
+        // Iterar TODOS los datasets y todos los puntos
+        bucket.dataset?.forEach((ds: any) => {
+          ds.point?.forEach((p: any) => {
+            // Extraer todos los valores fpVal disponibles (min, max, avg pueden estar en cualquier índice)
+            p.value?.forEach((v: any) => {
+              const val = v?.fpVal ?? v?.intVal ?? 0;
+              if (val > 30 && val < 220) hrValues.push(val); // rango fisiológico amplio
+            });
+          });
         });
       });
-      if (hrValues.length) {
-        restingHeartRate = Math.round(Math.min(...hrValues));
+      if (hrValues.length > 0) {
+        // FC en reposo = percentil 10 del día (los valores más bajos cuando el usuario está quieto)
+        const sorted = [...hrValues].sort((a, b) => a - b);
+        const p10idx = Math.max(0, Math.floor(sorted.length * 0.1));
+        restingHeartRate = Math.round(sorted[p10idx]);
+        console.log(`[GoogleFit] FC: ${hrValues.length} muestras, reposo estimado: ${restingHeartRate} bpm`);
       }
     }
 
-    // --- PARSEO DE PASOS ---
+    // --- PARSEO DE PASOS (CON FALLBACK) ---
     let steps: number | null = null;
     if (stepsRes?.bucket) {
       let totalSteps = 0;
+      let foundData = false;
       stepsRes.bucket.forEach((bucket: any) => {
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
-          totalSteps += (p.value?.[0]?.intVal ?? 0);
+          foundData = true;
+          totalSteps += (p.value?.[0]?.intVal ?? Math.round(p.value?.[0]?.fpVal ?? 0));
         });
       });
-      if (totalSteps > 0) steps = totalSteps;
+      if (foundData) steps = totalSteps;
+    }
+
+    // SI NO HAY PASOS con la fuente avanzada (especialmente en histórico), probar la básica
+    if (steps === null || steps === 0) {
+       console.log("No advanced steps found, trying basic delta...");
+       const basicStepsRes = await fetchAggregate(accessToken, 'com.google.step_count.delta', dayStart, dayEnd);
+       if (basicStepsRes?.bucket) {
+         let basicTotal = 0;
+         basicStepsRes.bucket.forEach((bucket: any) => {
+           bucket.dataset?.[0]?.point?.forEach((p: any) => {
+             basicTotal += (p.value?.[0]?.intVal ?? Math.round(p.value?.[0]?.fpVal ?? 0));
+           });
+         });
+         if (basicTotal > 0) steps = basicTotal;
+       }
     }
 
     // --- PARSEO DE CALORÍAS ---
@@ -219,16 +267,18 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
       let totalCals = 0;
       calRes.bucket.forEach((bucket: any) => {
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
-          totalCals += (p.value?.[0]?.fpVal ?? 0);
+          totalCals += (p.value?.[0]?.fpVal ?? p.value?.[0]?.intVal ?? 0);
         });
       });
       if (totalCals > 0) activeCalories = Math.round(totalCals);
     }
 
     const result = { sleepHours, restingHeartRate, steps, activeCalories, lastFetched: Date.now() };
-    console.log("Fitness Parsed Results:", result);
+    console.log(`[GoogleFit] Result for ${targetDate}:`, result);
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    // Re-throw UNAUTHORIZED para que el Store pueda renovar el token
+    if (error?.message === 'UNAUTHORIZED') throw error;
     console.error('Error fetching Google Fit data:', error);
     return { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: null };
   }
@@ -254,7 +304,7 @@ export const fetchWeeklyFitnessData = async (accessToken: string): Promise<Recor
     const sleepSessions = await fetchSessions(accessToken, startMs - (12 * 3600000), endMs); // Extra 12h atrás para capturar la primera noche
     
     // 2. Obtener buckets diarios para Pasos y Ritmo Cardíaco
-    // Google Fit puede agrupar por día (86400000 ms)
+    // IMPORTANTE: Para el historial NO usamos estimated_steps para evitar sumas acumuladas entre días.
     const dayMillis = 86400000;
     const [stepsRes, hrRes] = await Promise.all([
       fetchAggregateForRange(accessToken, 'com.google.step_count.delta', startMs, endMs, dayMillis),
@@ -265,7 +315,7 @@ export const fetchWeeklyFitnessData = async (accessToken: string): Promise<Recor
     for (let i = 0; i < 7; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      const dStr = d.toISOString().split('T')[0];
+      const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       result[dStr] = { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: Date.now() };
     }
 
@@ -273,36 +323,46 @@ export const fetchWeeklyFitnessData = async (accessToken: string): Promise<Recor
     if (stepsRes?.bucket) {
       stepsRes.bucket.forEach((bucket: any) => {
         const date = new Date(Number(bucket.startTimeMillis));
-        const dStr = date.toISOString().split('T')[0];
+        const dStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         let daySteps = 0;
         bucket.dataset?.[0]?.point?.forEach((p: any) => { daySteps += (p.value?.[0]?.intVal ?? 0); });
         if (result[dStr]) result[dStr].steps = daySteps || null;
       });
     }
 
-    // Procesar HR (buckets)
+    // Procesar HR (buckets) - Usando el mismo parser robusto que la consulta diaria
     if (hrRes?.bucket) {
       hrRes.bucket.forEach((bucket: any) => {
         const date = new Date(Number(bucket.startTimeMillis));
-        const dStr = date.toISOString().split('T')[0];
+        const dStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         let hrValues: number[] = [];
         bucket.dataset?.[0]?.point?.forEach((p: any) => {
-          const val = p.value?.[2]?.fpVal || p.value?.[0]?.fpVal || 0;
-          if (val > 0) hrValues.push(val);
+          // Capturar min (index 2) o average (index 0) o fpVal directo
+          const val = p.value?.[2]?.fpVal || p.value?.[1]?.fpVal || p.value?.[0]?.fpVal || p.value?.[0]?.intVal || 0;
+          if (val > 40 && val < 200) hrValues.push(val);
         });
-        if (result[dStr] && hrValues.length) result[dStr].restingHeartRate = Math.round(Math.min(...hrValues));
+        if (result[dStr] && hrValues.length) {
+          result[dStr].restingHeartRate = Math.round(Math.min(...hrValues));
+        }
       });
     }
 
-    // Procesar Sueño (Sessions)
+    // Procesar Sueño (Sessions) - Atribución estricta por fin de sesión
     if (sleepSessions?.session) {
       sleepSessions.session.forEach((s: any) => {
-        if (s.activityType === 72) {
+        // Tipos de sueño: 72 (Sleep), 109 (Light sleep), 110 (Deep sleep), 111 (REM sleep)
+        if (s.activityType === 72 || (s.activityType >= 109 && s.activityType <= 112)) {
           const sessionEnd = new Date(Number(s.endTimeMillis));
-          const dStr = sessionEnd.toISOString().split('T')[0]; // Atribuimos el sueño al día en que despiertas
-          if (result[dStr]) {
+          const dateOfWakeup = `${sessionEnd.getFullYear()}-${String(sessionEnd.getMonth() + 1).padStart(2, '0')}-${String(sessionEnd.getDate()).padStart(2, '0')}`;
+          
+          if (result[dateOfWakeup]) {
             const hours = (Number(s.endTimeMillis) - Number(s.startTimeMillis)) / 3600000;
-            result[dStr].sleepHours = Math.round(((result[dStr].sleepHours || 0) + hours) * 10) / 10;
+            // Solo sumar si la sesión es válida (entre 10 min y 16h)
+            if (hours > 0.16 && hours < 16) {
+                // Evitamos sumar si ya tenemos datos de una sesión más larga que la cubre (evitar duplicados por etapas)
+                // Pero como Google Sessions suele ser la "maestra", sumamos las que no se solapan
+                result[dateOfWakeup].sleepHours = Math.round(((result[dateOfWakeup].sleepHours || 0) + hours) * 10) / 10;
+            }
           }
         }
       });
@@ -316,16 +376,17 @@ export const fetchWeeklyFitnessData = async (accessToken: string): Promise<Recor
 };
 
 // Helper para rangos largos con buckets
-const fetchAggregateForRange = async (token: string, dataTypeName: string, startMs: number, endMs: number, bucketMs: number) => {
+const fetchAggregateForRange = async (token: string, dataTypeName: string, startMs: number, endMs: number, bucketMs: number, dataSourceId?: string) => {
+  const body: any = {
+    aggregateBy: [dataSourceId ? { dataSourceId } : { dataTypeName }],
+    bucketByTime: { durationMillis: bucketMs },
+    startTimeMillis: startMs,
+    endTimeMillis: endMs,
+  };
   const response = await fetch(FITNESS_BASE, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      aggregateBy: [{ dataTypeName }],
-      bucketByTime: { durationMillis: bucketMs },
-      startTimeMillis: startMs,
-      endTimeMillis: endMs,
-    }),
+    body: JSON.stringify(body),
   });
   return response.ok ? await response.json() : null;
 };

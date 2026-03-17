@@ -2,41 +2,23 @@ import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Calendar, Zap } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
-import MathEngine from '../../engine/calculator';
 
 const AnalyticsDashboard: React.FC = () => {
-    const { allLogs, baseIq } = useEngineStore();
+    const { baseIq, getHistoricalSeries } = useEngineStore();
     const staticBaseIq = baseIq || 133;
-
-    // Generar datos de los últimos 7 días
     const weeklyTrends = useMemo(() => {
-        const trends = [];
-        const today = new Date();
-        
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date(today);
-            date.setDate(today.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            
-            const dayLogs = allLogs[dateStr] || [];
-            // Nota: El impacto de fitness es difícil de calcular retroactivamente si no tenemos los datos guardados por día.
-            // Por ahora, calcularemos solo el impacto de suplementos sobre la base.
-            const dayPoints = MathEngine.calculateDailyPerformance(dayLogs, staticBaseIq, staticBaseIq);
-            
-            // Encontrar el CI máximo del día
-            const peakIq = Math.max(...dayPoints.map(p => p.iq));
-            const avgIq = dayPoints.reduce((acc, p) => acc + p.iq, 0) / dayPoints.length;
-            
-            trends.push({
-                date: dateStr,
+        const series = getHistoricalSeries(7);
+        return series.map(s => {
+            const date = new Date(s.date + 'T12:00:00');
+            return {
+                ...s,
                 label: date.toLocaleDateString('es-ES', { weekday: 'short' }),
-                peakIq: Math.round(peakIq),
-                avgIq: Math.round(avgIq),
-                logsCount: dayLogs.length
-            });
-        }
-        return trends;
-    }, [allLogs, staticBaseIq]);
+                peakIq: s.ci,
+                avgIq: s.ci, // Por ahora usamos el pico como referencia
+                logsCount: Object.values(s.supplements).reduce((a, b) => a + b, 0)
+            };
+        });
+    }, [getHistoricalSeries]);
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in duration-500">

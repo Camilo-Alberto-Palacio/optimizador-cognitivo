@@ -1,45 +1,75 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Moon, Heart, Footprints, Flame, RefreshCw, AlertCircle, CheckCircle2, Activity } from 'lucide-react';
 import { useEngineStore } from '../store/useEngineStore';
 import { calculateFitnessImpact } from '../services/googleFit';
+import { refreshGoogleFitToken } from '../services/firebase';
 
 const FitnessPanel: React.FC = () => {
     const { 
         fitnessData, 
+        isFetchingFitness,
         fitAccessToken, 
-        loadFitnessData, 
+        loadFitnessData,
+        setFitToken,
         baseIq, 
         manualSleepAdjustment, 
         selectedDate,
         updateManualSleep 
     } = useEngineStore();
 
+    const [isReconnecting, setIsReconnecting] = useState(false);
+
     const handleRefresh = async () => {
-        console.log("FitnessPanel: Intentando refrescar datos manual... token:", !!fitAccessToken);
-        if (fitAccessToken) await loadFitnessData();
+        if (fitAccessToken && !isFetchingFitness) await loadFitnessData();
     };
 
-    // Si no hay token (usuario no re-autorizado), mostramos botón de conexión directa
+    const handleReconnect = async () => {
+        setIsReconnecting(true);
+        try {
+            const newToken = await refreshGoogleFitToken();
+            if (newToken) {
+                setFitToken(newToken); // setFitToken ahora auto-carga los datos
+            }
+        } catch (e) {
+            console.error('Error reconectando Google Fit:', e);
+        } finally {
+            setIsReconnecting(false);
+        }
+    };
+
+    // Auto-refresco cada 10 minutos si estamos en el día de hoy
+    React.useEffect(() => {
+        if (!fitAccessToken || selectedDate !== new Date().toISOString().split('T')[0]) return;
+
+        const interval = setInterval(() => {
+            console.log("FitnessPanel: Auto-refreshing fitness data...");
+            loadFitnessData();
+        }, 10 * 60 * 1000); // 10 minutos
+
+        return () => clearInterval(interval);
+    }, [fitAccessToken, selectedDate, loadFitnessData]);
+
+
+    // Si no hay token => mostrar botón de reconexión
     if (!fitAccessToken) {
         return (
             <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Heart size={14} className="text-rose-400" /> Google Fit
                 </h3>
-                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-center">
                     <AlertCircle size={20} className="text-amber-500 mx-auto mb-2" />
-                    <p className="text-xs text-slate-600 font-semibold mb-4 leading-relaxed">
-                        Conecta tu cuenta para sincronizar sueño, pasos y ritmo cardíaco.
+                    <p className="text-xs text-slate-700 font-semibold mb-1">Tu sesión de Google Fit expiró</p>
+                    <p className="text-[10px] text-slate-500 mb-4 leading-relaxed">
+                        El token de acceso dura 1 hora. Haz clic para renovarlo sin cerrar sesión.
                     </p>
                     <button
-                        onClick={() => {
-                            // Usamos el botón de login que ya sabe pedir los scopes necesarios
-                            // El LoginScreen maneja setFitToken y loadFitnessData
-                            window.location.reload(); // Forma más simple de activar el flow de login si el token falta
-                        }}
-                        className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md shadow-indigo-100"
+                        onClick={handleReconnect}
+                        disabled={isReconnecting}
+                        className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 text-white font-bold text-sm py-3 rounded-xl transition-all active:scale-95 shadow-md shadow-indigo-100"
                     >
-                        <RefreshCw size={16} /> Conectar con Google Fit
+                        <RefreshCw size={16} className={isReconnecting ? 'animate-spin' : ''} />
+                        {isReconnecting ? 'Reconectando...' : 'Reconectar Google Fit'}
                     </button>
                 </div>
             </div>
@@ -47,20 +77,46 @@ const FitnessPanel: React.FC = () => {
     }
 
     if (!fitnessData) {
+        // Estado: petición en vuelo
+        if (isFetchingFitness) {
+            return (
+                <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Heart size={14} className="text-rose-400" /> Google Fit
+                    </h3>
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <RefreshCw className="text-indigo-500 animate-spin mb-3" size={24} />
+                        <p className="text-[10px] text-slate-500 font-medium italic px-4">
+                            Sincronizando bio-datos...
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Estado: carga terminada pero sin datos — permitir reintento
         return (
             <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <Heart size={14} className="text-rose-400" /> Google Fit
                 </h3>
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <RefreshCw className="text-indigo-500 animate-spin mb-3" size={24} />
-                    <p className="text-[10px] text-slate-500 font-medium italic px-4">
-                        Sincronizando bio-datos...
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                    <Activity size={20} className="text-slate-400 mx-auto mb-2" />
+                    <p className="text-xs text-slate-600 font-semibold mb-1">Sin datos por ahora</p>
+                    <p className="text-[10px] text-slate-400 mb-3 leading-relaxed px-2">
+                        Google Fit aún no tiene registros para este día o la respuesta llegó vacía.
                     </p>
+                    <button
+                        onClick={handleRefresh}
+                        className="w-full flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-sm py-2.5 rounded-xl transition-all active:scale-95"
+                    >
+                        <RefreshCw size={14} /> Reintentar
+                    </button>
                 </div>
             </div>
         );
     }
+
 
     const adjustment = manualSleepAdjustment[selectedDate] || 0;
     const rawSleep = fitnessData.sleepHours;
@@ -90,23 +146,34 @@ const FitnessPanel: React.FC = () => {
 
     const lastFetchTime = lastFetched ? new Date(lastFetched).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--';
 
+    const isToday = selectedDate === new Date().toISOString().split('T')[0] || selectedDate === `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
+    const dateLabel = isToday ? 'Hoy' : new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
     return (
         <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
-            {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                    <Heart size={14} className="text-rose-400" fill="currentColor" /> Google Fit · Hoy
+                    <Heart size={14} className="text-rose-400" fill="currentColor" /> Google Fit · {dateLabel}
                 </h3>
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] text-slate-400">Act. {lastFetchTime}</span>
                     <button
                         onClick={handleRefresh}
-                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 text-slate-500 transition-all active:scale-90"
+                        disabled={isFetchingFitness}
+                        className={`p-1.5 rounded-lg transition-all active:scale-90 ${isFetchingFitness ? 'bg-indigo-50 text-indigo-400 cursor-not-allowed' : 'bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 text-slate-500'}`}
                         title="Actualizar datos de Fit"
                     >
-                        <RefreshCw size={14} />
+                        <RefreshCw size={14} className={isFetchingFitness ? 'animate-spin' : ''} />
                     </button>
                 </div>
+            </div>
+
+            {/* Sync Tip (v8.1) */}
+            <div className="mb-4 px-3 py-2 bg-indigo-50/50 rounded-xl border border-indigo-100/50 flex items-start gap-2">
+                <AlertCircle size={14} className="text-indigo-400 mt-0.5" />
+                <p className="text-[9px] text-indigo-600 font-medium leading-tight">
+                    Si los pasos no coinciden, abre Google Fit en tu teléfono para sincronizarlos.
+                </p>
             </div>
 
             {/* IQ Impact Badge */}

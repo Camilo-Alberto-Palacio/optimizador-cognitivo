@@ -7,6 +7,7 @@ import { ChartDataPoint, Warning, LogEvent, FitnessData } from '../types';
 import MathEngine from '../engine/calculator';
 import { evaluateInteractions } from '../engine/rules';
 import { fetchFitnessData, calculateFitnessImpact } from '../services/googleFit';
+import { refreshGoogleFitToken } from '../services/firebase';
 
 // Helper to get today's date as YYYY-MM-DD
 export const getTodayStr = (): string => {
@@ -32,6 +33,7 @@ interface EngineState {
   // Google Fit
   fitAccessToken: string | null;
   fitnessData: FitnessData | null;
+  isFetchingFitness: boolean;
   manualSleepAdjustment: Record<string, number>; // Ajuste de horas por 'YYYY-MM-DD'
   // Analytics
   activeView: 'dashboard' | 'analytics';
@@ -53,6 +55,7 @@ interface EngineState {
   recalculate: () => void;
   // Derived helpers
   getLogsForDate: (date: string) => LogEvent[];
+  getHistoricalSeries: (days?: number) => { date: string; ci: number; sleep: number; steps: number; supplements: Record<string, number> }[];
 }
 
 export const useEngineStore = create<EngineState>()(
@@ -72,6 +75,7 @@ export const useEngineStore = create<EngineState>()(
 
       fitAccessToken: null,
       fitnessData: null,
+      isFetchingFitness: false,
       manualSleepAdjustment: {},
       activeView: 'dashboard',
       weeklyFitnessData: {},
@@ -79,42 +83,54 @@ export const useEngineStore = create<EngineState>()(
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });
+        // Auto-cargar datos al recibir un token nuevo
+        setTimeout(() => get().loadFitnessData(), 500);
       },
 
       setActiveView: (view) => set({ activeView: view }),
 
       loadFitnessData: async () => {
-        const { fitAccessToken, baseIq, selectedDate } = get();
+        const { fitAccessToken, selectedDate } = get();
         if (!fitAccessToken) return;
         
+        // Capturar la fecha al inicio de la petición para detectar cambios
+        const requestDate = selectedDate;
+        set({ isFetchingFitness: true, fitnessData: null });
+        
         try {
-          // Fetch data for the specific day being viewed
-          const data = await fetchFitnessData(fitAccessToken, selectedDate);
+          const data = await fetchFitnessData(fitAccessToken as string, requestDate);
           
-          // Check if the API returned null (might be due to expired token)
-          if (!data.lastFetched && fitAccessToken) {
-            console.warn("Fitness data fetch failed. Token might be expired.");
-            // Marcamos como cargado (aunque sea con nulos) para detener el spinner de carga
-            set({ fitnessData: { ...data, lastFetched: Date.now() } });
-            return;
+          // Si el usuario cambió de fecha mientras esperábamos, descartar el resultado
+          if (get().selectedDate !== requestDate) {
+            console.log(`[GoogleFit] Resultado obsoleto para ${requestDate}, descartando.`);
+            return; // finally limpiará isFetchingFitness de todos modos
           }
 
-          set({ fitnessData: data });
-          get().recalculate();
-          
-          if (data.sleepHours !== null && baseIq) {
-            console.log(`Fitness IQ adjustment for ${selectedDate}: ${baseIq} → ${calculateFitnessImpact(data, baseIq)} (sleep: ${data.sleepHours}h)`);
+          if (data && data.lastFetched) {
+            set({ fitnessData: data });
+            get().recalculate();
+            console.log(`[GoogleFit] Datos cargados para ${requestDate}:`, data);
+          } else {
+            console.warn('[GoogleFit] La API no devolvió datos para', requestDate);
+            set({ fitnessData: null });
           }
         } catch (error: any) {
-          console.error("Error in loadFitnessData:", error);
-          // Detener el estado de carga incluso en error grave
-          set({ fitnessData: get().fitnessData || { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: Date.now() } });
-          
+          console.error('[GoogleFit] Error cargando datos:', error);
+          set({ fitnessData: null });
           if (error.message === 'UNAUTHORIZED') {
-             console.warn("Token de Google Fit expirado. Limpiando para re-vincular.");
-             set({ fitAccessToken: null, fitnessData: null });
-             get().recalculate();
+            console.warn('[Store] Token expirado. Intentando renovar silenciosamente...');
+            set({ fitAccessToken: null });
+            refreshGoogleFitToken().then(newToken => {
+              if (newToken) {
+                console.log('[Store] Token renovado, recargando datos...');
+                set({ fitAccessToken: newToken });
+                setTimeout(() => get().loadFitnessData(), 500);
+              }
+            });
           }
+        } finally {
+          // SIEMPRE limpiar el spinner — sin condición de fecha
+          set({ isFetchingFitness: false });
         }
       },
 
@@ -152,6 +168,52 @@ export const useEngineStore = create<EngineState>()(
 
       getLogsForDate: (date: string) => {
         return get().allLogs[date] || [];
+      },
+
+      /**
+       * Extractor de series temporales para analítica
+       */
+      getHistoricalSeries: (days: number = 7) => {
+        const { allLogs, baseIq, weeklyFitnessData, manualSleepAdjustment } = get();
+        const staticBaseIq = baseIq || 133;
+        const series: { date: string; ci: number; sleep: number; steps: number; supplements: Record<string, number> }[] = [];
+        
+        const today = new Date();
+        for (let i = 0; i < days; i++) {
+          const d = new Date(today);
+          d.setDate(today.getDate() - i);
+          const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          
+          const logs = allLogs[dStr] || [];
+          const fit = weeklyFitnessData[dStr] || { sleepHours: null, steps: null };
+          
+          // Calcular CI Pico para ese día
+          const adj = Number(manualSleepAdjustment[dStr] || 0);
+          // Importante: No usar toISOString para evitar desfase UTC
+          const rawSleep = fit.sleepHours !== null ? Number(fit.sleepHours) : null;
+          const adjustedFitness = {
+            ...fit,
+            sleepHours: rawSleep !== null ? Math.max(0, rawSleep + adj) : (adj > 0 ? adj : null)
+          };
+          const effectiveBaseIq = calculateFitnessImpact(adjustedFitness as any, staticBaseIq);
+          const dailyChart = MathEngine.calculateDailyPerformance(logs, effectiveBaseIq, staticBaseIq);
+          const peakCi = Math.max(...dailyChart.map(p => p.iq), staticBaseIq);
+
+          // Contar suplementos únicos ese día
+          const supplementCounts: Record<string, number> = {};
+          logs.filter(l => !l.hidden).forEach(l => {
+            supplementCounts[l.supplementId] = (supplementCounts[l.supplementId] || 0) + (l.quantity || 1);
+          });
+
+          series.push({
+            date: dStr,
+            ci: peakCi,
+            sleep: adjustedFitness.sleepHours || 0,
+            steps: fit.steps || 0,
+            supplements: supplementCounts
+          });
+        }
+        return series.reverse();
       },
 
       setUser: async (user) => {

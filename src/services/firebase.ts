@@ -12,29 +12,42 @@ const firebaseConfig = {
   measurementId: "G-R0MH6BGV9Z"
 };
 
-// Inicializamos la Aplicación de Firebase
 const app = initializeApp(firebaseConfig);
-
-// Inicializamos el servicio de Autenticación
 export const auth = getAuth(app);
-
-// Inicializamos la Base de Datos
 export const db = getFirestore(app);
 
-// Configuramos el Proveedor de Google con scopes de Fitness
 const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({
-  prompt: 'select_account'
-});
-// Scopes de Google Fit para datos de salud
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.activity.read');
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.sleep.read');
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.body.read');
 googleProvider.addScope('https://www.googleapis.com/auth/fitness.heart_rate.read');
 
-// Funciones de conveniencia para exportar y usar en los componentes
 export const loginWithGoogle = () => signInWithPopup(auth, googleProvider);
 export const getGoogleCredential = GoogleAuthProvider.credentialFromResult;
 export const logoutFromFirebase = () => signOut(auth);
+
+/**
+ * Renueva el access token de Google de forma silenciosa.
+ * Requiere un re-login del usuario por las restricciones de OAuth.
+ * Devuelve el nuevo token o null si falla.
+ */
+export const refreshGoogleFitToken = async (): Promise<string | null> => {
+  try {
+    const silentProvider = new GoogleAuthProvider();
+    // No pedimos 'select_account' para que sea más fluido
+    silentProvider.addScope('https://www.googleapis.com/auth/fitness.activity.read');
+    silentProvider.addScope('https://www.googleapis.com/auth/fitness.sleep.read');
+    silentProvider.addScope('https://www.googleapis.com/auth/fitness.body.read');
+    silentProvider.addScope('https://www.googleapis.com/auth/fitness.heart_rate.read');
+    
+    const result = await signInWithPopup(auth, silentProvider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    return credential?.accessToken || null;
+  } catch (err) {
+    console.error('[Firebase] Token refresh failed:', err);
+    return null;
+  }
+};
 
 export default app;
