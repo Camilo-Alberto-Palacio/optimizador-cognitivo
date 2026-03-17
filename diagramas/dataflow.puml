@@ -21,10 +21,23 @@ FitService -> FitService : mergeSleepIntervals()\n(Triple Verificación)
 FitService --> Store : FitnessData {sleep, steps, bpm}
 deactivate FitService
 
-Store -> Store : recalculate()
 Store -> CalcEngine : calculateDailyPerformance(logs, baseIq, fitness)
 CalcEngine --> Store : ChartDataPoint {iqBase, iqFitness, iqBoost}
 Store --> View : Renderiza desgloses y curva
+
+== Manejo de Expiración (Token Refresh) ==
+Store -> FitService : fetch (recibe 401 UNAUTHORIZED)
+Store -> FB : refreshGoogleFitToken()
+FB --> Store : setFitToken(newToken)
+Store -> Store : loadFitnessData() (auto-retry)
+
+== Analítica Semanal (Tendencias) ==
+User -> UI : Cambia a pestaña "Tendencias"
+UI -> Store : setActiveView('analytics')
+Store -> Store : loadWeeklyFitnessData()
+Store -> FitService : fetch múltiple (7 días)
+FitService --> Store : Record<Date, FitnessData>
+Store --> UI : Renderiza AnalyticsDashboard
 
 == Ajuste Manual de Sueño ==
 User -> UI : Click +0.5h / -0.5h

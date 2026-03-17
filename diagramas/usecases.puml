@@ -25,6 +25,7 @@ rectangle "Optimizador Cognitivo" {
 
   package "Análisis y Visualización" {
     usecase "Ver Gráfico de Rendimiento" as UC_Chart
+    usecase "Consultar Tendencias Semanales" as UC_Trends
     usecase "Consultar Desglose de CI" as UC_CI_Breakdown
     usecase "Recibir Alertas de Interacción" as UC_Alerts
   }

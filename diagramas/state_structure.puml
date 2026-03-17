@@ -14,6 +14,8 @@ class "useEngineStore" as Store {
     + favorites: string[]
     + chartData: ChartDataPoint[]
     + fitnessData: FitnessData | null
+    + isFetchingFitness: boolean
+    + activeView: 'dashboard' | 'analytics'
     + manualSleepAdjustment: Record<string, number>
     + fitAccessToken: string | null
     + baseIq: number | null
@@ -21,10 +23,13 @@ class "useEngineStore" as Store {
     + user: User | null
     --
     + setSelectedDate(date: string)
+    + setActiveView(view: string)
     + addLog(suppId, time, qty?, note?)
     + toggleLogVisibility(id: string)
     + updateManualSleep(hours: number)
     + loadFitnessData()
+    + loadWeeklyFitnessData()
+    + setFitToken(token: string)
     - recalculate()
 }
 

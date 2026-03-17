@@ -7,8 +7,9 @@ package "Capa de UI (React Components)" #EEF2FF {
   [App.tsx] as App <<Orchestrator>>
   [JournalTimeline.tsx] as Journal <<Historial + Fechas>>
   [SupplementSelector.tsx] as Selector <<Favoritos + Registro>>
-  [FitnessPanel.tsx] as Fitness <<Salud + Ajustes>>
+  [FitnessPanel.tsx] as Fitness <<Salud + Ajustes + Reconnect>>
   [MasterChart.tsx] as Chart <<Recharts>>
+  [AnalyticsDashboard.tsx] as Analytics <<Trends + Reports>>
   [HeaderStats.tsx] as Stats
   [WarningAlerts.tsx] as Alerts <<Medical Panel>>
   [LoginScreen.tsx] as Login
@@ -28,6 +29,7 @@ package "Motor de Lógica (Domain Engine)" #FFF7ED {
 package "Servicios de Plataforma" #F0F4FF {
   [Google Fit API] as FitAPI <<OAuth Restricted>>
   [Firebase Auth/DB] as Cloud <<Cloud Sync>>
+  [Firebase Services] as FbSrv <<refreshGoogleFitToken>>
   [Vite PWA] as PWA <<Offline Support>>
 }
 
@@ -36,6 +38,7 @@ App --> Journal
 App --> Selector
 App --> Fitness
 App --> Chart
+App --> Analytics : "si activeView === 'analytics'"
 App --> Stats
 App --> Login : "si !user"
 App --> IQ : "si !assessmentCompleted"
@@ -59,6 +62,7 @@ FitService -right-> FitAPI : "REST POST/JSON"
 
 ' Servicios
 Cloud --> Store : "Auth + Firestore Sync"
+FbSrv --> Store : "Nuevo Access Token"
 PWA --> App : "Offline Cache"
 
 @enduml
