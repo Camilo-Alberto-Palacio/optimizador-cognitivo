@@ -141,6 +141,25 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'espinacas', name: 'Espinacas Baby (1 taza)', category: 'nutrition', effectK: 3, durationH: 4, macronutrients: { protein: 1, carbs: 1, fats: 0, calories: 7 } },
   { id: 'kefir', name: 'Kéfir / Probióticos', category: 'nutrition', effectK: 5, durationH: 12 },
   { id: 'higado', name: 'Hígado de Res (100g - Vit. A/B12)', category: 'nutrition', effectK: 9, durationH: 24, macronutrients: { protein: 26, carbs: 4, fats: 5, calories: 175 } },
+  
+  // --- ALIMENTOS COLOMBIANOS Y TRADICIONALES ---
+  { id: 'carne_cerdo', name: 'Carne de Cerdo (100g)', category: 'nutrition', effectK: 3, durationH: 12, macronutrients: { protein: 21, carbs: 0, fats: 10, calories: 180 } },
+  { id: 'chicharron', name: 'Chicharrón (100g)', category: 'nutrition', effectK: -4, durationH: 8, toxicityScore: 1, macronutrients: { protein: 15, carbs: 0, fats: 35, calories: 400 } },
+  { id: 'arepa_maiz', name: 'Arepa de Maíz (1 u)', category: 'nutrition', effectK: 4, durationH: 4, macronutrients: { protein: 2, carbs: 32, fats: 1, calories: 150 } },
+  { id: 'papa_criolla', name: 'Papa Criolla / Blanca (2 u)', category: 'nutrition', effectK: 3, durationH: 3, macronutrients: { protein: 2, carbs: 20, fats: 0, calories: 90 } },
+  { id: 'yuca_cocida', name: 'Yuca Cocida (100g)', category: 'nutrition', effectK: 4, durationH: 5, macronutrients: { protein: 1, carbs: 38, fats: 0, calories: 160 } },
+  { id: 'patacon', name: 'Patacón / Plátano Frito (1 u)', category: 'nutrition', effectK: -2, durationH: 4, macronutrients: { protein: 1, carbs: 30, fats: 8, calories: 200 } },
+  { id: 'arroz_coco', name: 'Arroz con Coco (1 taza)', category: 'nutrition', effectK: -3, durationH: 5, macronutrients: { protein: 4, carbs: 55, fats: 12, calories: 350 } },
+  { id: 'huevo_perico', name: 'Huevo Perico (2 u + Hogao)', category: 'nutrition', effectK: 6, durationH: 4, macronutrients: { protein: 13, carbs: 3, fats: 11, calories: 160 } },
+  { id: 'agua_panela', name: 'Agua de Panela (1 vaso)', category: 'nutrition', effectK: -5, durationH: 2, macronutrients: { protein: 0, carbs: 25, fats: 0, calories: 100 } },
+  { id: 'jugo_fruta', name: 'Jugo de Fruta Natural (C/ Azúcar)', category: 'nutrition', effectK: -6, durationH: 2, macronutrients: { protein: 1, carbs: 30, fats: 0, calories: 120 } },
+  { id: 'gaseosa_col', name: 'Gaseosa (Postobón/Colombiana)', category: 'nutrition', effectK: -15, durationH: 2, toxicityScore: 2, macronutrients: { protein: 0, carbs: 40, fats: 0, calories: 150 } },
+
+  // --- PAQUETES Y SNACKS PROCESADOS ---
+  { id: 'papas_paquete', name: 'Papas de Paquete (Margarita/Pringles)', category: 'nutrition', effectK: -12, durationH: 4, toxicityScore: 2, macronutrients: { protein: 2, carbs: 15, fats: 10, calories: 160 } },
+  { id: 'chitos', name: 'Chitos / Ganchitos / Pasabocas', category: 'nutrition', effectK: -14, durationH: 3, toxicityScore: 3, macronutrients: { protein: 1, carbs: 18, fats: 9, calories: 150 } },
+  { id: 'platanitos_paquete', name: 'Platanitos de Bolsa (Paquete)', category: 'nutrition', effectK: -10, durationH: 4, toxicityScore: 2, macronutrients: { protein: 1, carbs: 20, fats: 8, calories: 150 } },
+  { id: 'galletas_dulces', name: 'Galletas Dulces (Festival/Noel)', category: 'nutrition', effectK: -16, durationH: 3, toxicityScore: 2, macronutrients: { protein: 2, carbs: 25, fats: 7, calories: 180 } },
 
   // --- ALIMENTOS INFLAMATORIOS Y FACTORES NEGATIVOS ---
   { id: 'azucar_refinada', name: 'Azúcar Refinada / Dulces', category: 'nutrition', effectK: -12, durationH: 3, toxicityScore: 2 },
