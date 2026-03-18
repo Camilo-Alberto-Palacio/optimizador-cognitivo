@@ -39,11 +39,13 @@ interface EngineState {
   activeView: 'dashboard' | 'analytics';
   weeklyFitnessData: Record<string, FitnessData>;
   isLoadingWeekly: boolean;
+  stressLevel: Record<string, number>; // Nivel de estrés por 'YYYY-MM-DD' (1-10)
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
   loadWeeklyFitnessData: () => Promise<void>;
   setActiveView: (view: 'dashboard' | 'analytics') => void;
   updateManualSleep: (hours: number) => void;
+  updateStressLevel: (level: number) => void;
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
@@ -80,6 +82,7 @@ export const useEngineStore = create<EngineState>()(
       activeView: 'dashboard',
       weeklyFitnessData: {},
       isLoadingWeekly: false,
+      stressLevel: {},
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });
@@ -166,6 +169,20 @@ export const useEngineStore = create<EngineState>()(
         get().recalculate();
       },
 
+      updateStressLevel: (level: number) => {
+        const { selectedDate, stressLevel, user } = get();
+        const newStress = {
+          ...stressLevel,
+          [selectedDate]: Math.round(Math.max(1, Math.min(10, level)))
+        };
+        set({ stressLevel: newStress });
+        if (user) {
+          setDoc(doc(db, 'users', user.uid), { stressLevel: newStress }, { merge: true })
+            .catch(err => console.error("Error saving stress level to cloud:", err));
+        }
+        get().recalculate();
+      },
+
       getLogsForDate: (date: string) => {
         return get().allLogs[date] || [];
       },
@@ -235,6 +252,10 @@ export const useEngineStore = create<EngineState>()(
 
               if (data.manualSleepAdjustment) {
                 set({ manualSleepAdjustment: data.manualSleepAdjustment });
+              }
+
+              if (data.stressLevel) {
+                set({ stressLevel: data.stressLevel });
               }
 
               if (cloudAllLogs) {
@@ -373,11 +394,24 @@ export const useEngineStore = create<EngineState>()(
       },
 
       recalculate: () => {
-        const { allLogs, selectedDate, baseIq, fitnessData, manualSleepAdjustment } = get();
+        const { allLogs, selectedDate, baseIq, fitnessData, manualSleepAdjustment, stressLevel } = get();
         const logs = allLogs[selectedDate] || [];
         
         const staticBaseIq = baseIq || 133;
         let effectiveBaseIq = staticBaseIq;
+
+        // --- IMPACTO DEL ESTRÉS (MANUAL) ---
+        const currentStress = stressLevel[selectedDate] || 1;
+        if (currentStress >= 4) {
+          // El estrés penaliza el baseIq directamente
+          // 4-6: -5 a -10
+          // 7-10: -15 a -30
+          const stressPenalty = currentStress < 7 
+            ? (currentStress - 3) * 3 
+            : 10 + (currentStress - 6) * 5;
+          effectiveBaseIq -= stressPenalty;
+        }
+
         if (fitnessData) {
           // Ajustar los datos de fitness con el offset manual antes de calcular el impacto
           const adj = Number(manualSleepAdjustment[selectedDate] || 0);
@@ -406,6 +440,7 @@ export const useEngineStore = create<EngineState>()(
           selectedDate: state.selectedDate,
           fitAccessToken: state.fitAccessToken,
           manualSleepAdjustment: state.manualSleepAdjustment,
+          stressLevel: state.stressLevel,
           weeklyFitnessData: state.weeklyFitnessData
       }), 
       onRehydrateStorage: () => (state) => {

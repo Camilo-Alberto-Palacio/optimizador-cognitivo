@@ -12,9 +12,11 @@ const FitnessPanel: React.FC = () => {
         loadFitnessData,
         setFitToken,
         baseIq, 
-        manualSleepAdjustment, 
+        manualSleepAdjustment,
         selectedDate,
-        updateManualSleep 
+        updateManualSleep,
+        stressLevel,
+        updateStressLevel
     } = useEngineStore();
 
     const [isReconnecting, setIsReconnecting] = useState(false);
@@ -122,7 +124,8 @@ const FitnessPanel: React.FC = () => {
     const rawSleep = fitnessData.sleepHours;
     // Combinar dato de Google Fit con ajuste manual
     const sleepHours = rawSleep !== null ? Math.max(0, rawSleep + adjustment) : (adjustment > 0 ? adjustment : null);
-    const { restingHeartRate, steps, activeCalories, lastFetched } = fitnessData;
+    const { restingHeartRate, steps, activeCalories, spo2, lastFetched } = fitnessData;
+    const currentStress = stressLevel[selectedDate] || 1;
     
     // Check if ALL fields are null (indicates successful API call but no data found)
     const hasData = sleepHours !== null || restingHeartRate !== null || steps !== null || activeCalories !== null;
@@ -287,8 +290,57 @@ const FitnessPanel: React.FC = () => {
                             {activeCalories !== null ? (activeCalories >= 400 ? 'Activo ✓' : 'Sedentario') : 'Sin datos'}
                         </p>
                     </div>
+
+                    {/* Oxígeno (SpO2) */}
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <Activity size={13} className="text-cyan-400" />
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oxígeno SpO2</span>
+                        </div>
+                        <p className={`text-xl font-black ${spo2 !== null && spo2 >= 95 ? 'text-cyan-600' : spo2 !== null && spo2 >= 90 ? 'text-amber-500' : 'text-rose-600'}`}>
+                            {spo2 !== null ? `${spo2}%` : '--'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-medium">
+                            {spo2 !== null ? (spo2 >= 95 ? 'Óptimo ✓' : spo2 >= 90 ? 'Bajo' : 'Alerta') : 'Sin datos'}
+                        </p>
+                    </div>
                 </div>
             )}
+
+            {/* Stress Slider Section */}
+            <div className="mt-5 pt-4 border-t border-slate-100">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                        <Activity size={13} className="text-violet-400" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Estrés Percibido</span>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${currentStress < 4 ? 'bg-emerald-100 text-emerald-600' : currentStress < 7 ? 'bg-amber-100 text-amber-600' : 'bg-rose-100 text-rose-600'}`}>
+                        {currentStress < 4 ? 'Bajo' : currentStress < 7 ? 'Moderado' : 'Alto'}
+                    </span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                    <span className="text-lg">😌</span>
+                    <input 
+                        type="range" 
+                        min="1" 
+                        max="10" 
+                        step="1"
+                        value={currentStress}
+                        onChange={(e) => updateStressLevel(parseInt(e.target.value))}
+                        className="flex-1 h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-violet-500"
+                    />
+                    <span className="text-lg">🤯</span>
+                </div>
+                <div className="flex justify-between px-7 mt-1">
+                    <span className="text-[9px] font-bold text-slate-400">1</span>
+                    <span className="text-[9px] font-bold text-slate-400">5</span>
+                    <span className="text-[9px] font-bold text-slate-400">10</span>
+                </div>
+                <p className="text-[9px] text-slate-400 mt-2 italic leading-tight">
+                    * El estrés alto reduce drásticamente tu capacidad cognitiva base debido a la carga de cortisol.
+                </p>
+            </div>
         </div>
     );
 };

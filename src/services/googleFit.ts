@@ -1,9 +1,10 @@
 export interface FitnessData {
-  sleepHours: number | null;       // Horas de sueño anoche
-  restingHeartRate: number | null; // BPM en reposo (promedio del día)
-  steps: number | null;            // Pasos del día
-  activeCalories: number | null;   // Calorías activas quemadas
-  lastFetched: number | null;      // timestamp de la última consulta
+  sleepHours: number | null;
+  restingHeartRate: number | null;
+  steps: number | null;
+  activeCalories: number | null;
+  spo2: number | null;
+  lastFetched: number | null;
 }
 
 const FITNESS_BASE = 'https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate';
@@ -207,6 +208,29 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
       console.warn("No sleep data found in any Google Fit source.");
     }
 
+    // --- PARSEO DE OXÍGENO EN SANGRE (SpO2) ---
+    let spo2: number | null = null;
+    const spo2Res = await fetchAggregate(accessToken, 'com.google.oxygen_saturation', dayStart, dayEnd);
+    if (spo2Res?.bucket) {
+      const spo2Values: number[] = [];
+      spo2Res.bucket.forEach((bucket: any) => {
+        bucket.dataset?.forEach((ds: any) => {
+          ds.point?.forEach((p: any) => {
+            p.value?.forEach((v: any) => {
+              const val = v?.fpVal ?? 0;
+              if (val > 50 && val <= 100) spo2Values.push(val);
+            });
+          });
+        });
+      });
+      if (spo2Values.length > 0) {
+        // Usamos el promedio para el SpO2 general
+        const sum = spo2Values.reduce((a, b) => a + b, 0);
+        spo2 = Math.round(sum / spo2Values.length);
+        console.log(`[GoogleFit] SpO2 detectable: ${spo2}% (${spo2Values.length} muestras)`);
+      }
+    }
+
     // --- PARSEO DE RITMO CARDIACO ---
     let restingHeartRate: number | null = null;
     if (hrRes?.bucket) {
@@ -273,14 +297,14 @@ export const fetchFitnessData = async (accessToken: string, targetDate: string):
       if (totalCals > 0) activeCalories = Math.round(totalCals);
     }
 
-    const result = { sleepHours, restingHeartRate, steps, activeCalories, lastFetched: Date.now() };
+    const result = { sleepHours, restingHeartRate, steps, activeCalories, spo2, lastFetched: Date.now() };
     console.log(`[GoogleFit] Result for ${targetDate}:`, result);
     return result;
   } catch (error: any) {
     // Re-throw UNAUTHORIZED para que el Store pueda renovar el token
     if (error?.message === 'UNAUTHORIZED') throw error;
     console.error('Error fetching Google Fit data:', error);
-    return { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: null };
+    return { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, spo2: null, lastFetched: null };
   }
 };
 
@@ -316,7 +340,7 @@ export const fetchWeeklyFitnessData = async (accessToken: string): Promise<Recor
       const d = new Date(start);
       d.setDate(start.getDate() + i);
       const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      result[dStr] = { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, lastFetched: Date.now() };
+      result[dStr] = { sleepHours: null, restingHeartRate: null, steps: null, activeCalories: null, spo2: null, lastFetched: Date.now() };
     }
 
     // Procesar Pasos (buckets)
@@ -420,6 +444,13 @@ export const calculateFitnessImpact = (fitness: FitnessData, baseIq: number): nu
     else if (fitness.steps >= 7500) adjusted += 2;
     else if (fitness.steps >= 5000) adjusted += 1;
     else if (fitness.steps < 2000) adjusted -= 2;
+  }
+
+  // OXÍGENO EN SANGRE (SpO2): oxigenación cerebral
+  if (fitness.spo2 !== null) {
+    if (fitness.spo2 < 90) adjusted -= 15;        // Hipoxia severa (impacto masivo)
+    else if (fitness.spo2 < 94) adjusted -= 8;     // Hipoxia leve / mala recuperación
+    else if (fitness.spo2 >= 97) adjusted += 2;    // Oxigenación óptima
   }
 
   return Math.round(adjusted);

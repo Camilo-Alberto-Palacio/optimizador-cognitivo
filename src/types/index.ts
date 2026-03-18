@@ -48,6 +48,7 @@ export interface FitnessData {
     sleepHours: number | null;
     restingHeartRate: number | null;
     steps: number | null;
+    spo2: number | null;
     activeCalories: number | null;
     lastFetched: number | null;
 }
