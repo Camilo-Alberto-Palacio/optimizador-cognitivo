@@ -125,6 +125,15 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'chlorella', name: 'Chlorella', category: 'nutrition', effectK: 4, durationH: 6 },
   { id: 'proteina_whey', name: 'Proteína Whey (Suero - 1 Scoop)', category: 'nutrition', effectK: 5, durationH: 4, macronutrients: { protein: 25, carbs: 2, fats: 1, calories: 120 } },
   { id: 'colageno', name: 'Péptidos de Colágeno', category: 'nutrition', effectK: 3, durationH: 6, macronutrients: { protein: 10, carbs: 0, fats: 0, calories: 40 } },
+
+  // --- ALTERNATIVAS SALUDABLES D1 (ALTA SACIEDAD) ---
+  { id: 'yogurt_griego_d1', name: 'Yogurt Griego Latti Natural (D1)', category: 'nutrition', effectK: 6, durationH: 5, macronutrients: { protein: 9, carbs: 5, fats: 4, calories: 90 } },
+  { id: 'mix_frutos_d1', name: 'Mix de Frutos Secos Senz (D1)', category: 'nutrition', effectK: 5, durationH: 6, macronutrients: { protein: 5, carbs: 6, fats: 14, calories: 170 } },
+  { id: 'tostadas_natri', name: 'Tostadas de Arroz/Maíz Natri (D1)', category: 'nutrition', effectK: 4, durationH: 3, macronutrients: { protein: 1, carbs: 12, fats: 0, calories: 50 } },
+  { id: 'atun_agua_d1', name: 'Atún en Agua Carlo Forte (D1)', category: 'nutrition', effectK: 5, durationH: 10, macronutrients: { protein: 22, carbs: 0, fats: 1, calories: 100 } },
+  { id: 'proteina_pomar_d1', name: 'Bebida Proteica Pomar 0% Azúcar (D1)', category: 'nutrition', effectK: 7, durationH: 4, macronutrients: { protein: 16, carbs: 4, fats: 0, calories: 80 } },
+  { id: 'mani_sin_sal_d1', name: 'Maní Sin Sal Senz (D1)', category: 'nutrition', effectK: 5, durationH: 6, macronutrients: { protein: 7, carbs: 5, fats: 14, calories: 160 } },
+  { id: 'chocolate_70_d1', name: 'Chocolate 70% Cacao (D1)', category: 'nutrition', effectK: 6, durationH: 3, macronutrients: { protein: 2, carbs: 10, fats: 12, calories: 150 } },
   
   // --- ALIMENTOS MACRONUTRICIONALES (COMIDAS) ---
   { id: 'pollo_carne', name: 'Pollo / Carne Magra (100g)', category: 'nutrition', effectK: 2, durationH: 12, macronutrients: { protein: 25, carbs: 0, fats: 5, calories: 150 } },
