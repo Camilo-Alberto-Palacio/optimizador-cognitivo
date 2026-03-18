@@ -160,6 +160,8 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'chitos', name: 'Chitos / Ganchitos / Pasabocas', category: 'nutrition', effectK: -14, durationH: 3, toxicityScore: 3, macronutrients: { protein: 1, carbs: 18, fats: 9, calories: 150 } },
   { id: 'platanitos_paquete', name: 'Platanitos de Bolsa (Paquete)', category: 'nutrition', effectK: -10, durationH: 4, toxicityScore: 2, macronutrients: { protein: 1, carbs: 20, fats: 8, calories: 150 } },
   { id: 'galletas_dulces', name: 'Galletas Dulces (Festival/Noel)', category: 'nutrition', effectK: -16, durationH: 3, toxicityScore: 2, macronutrients: { protein: 2, carbs: 25, fats: 7, calories: 180 } },
+  { id: 'wafer_noel', name: 'Wafer Noel (4 galletas - 24g)', category: 'nutrition', effectK: -10, durationH: 3, toxicityScore: 2, macronutrients: { protein: 1, carbs: 15, fats: 5, calories: 110 } },
+  { id: 'happy_black', name: 'Happy Black D1 (4 galletas - 34g)', category: 'nutrition', effectK: -14, durationH: 3, toxicityScore: 2, macronutrients: { protein: 2, carbs: 22, fats: 7, calories: 159 } },
 
   // --- ALIMENTOS INFLAMATORIOS Y FACTORES NEGATIVOS ---
   { id: 'azucar_refinada', name: 'Azúcar Refinada / Dulces', category: 'nutrition', effectK: -12, durationH: 3, toxicityScore: 2 },
