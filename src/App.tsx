@@ -10,6 +10,7 @@ import LoginScreen from './components/LoginScreen';
 import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
 import FitnessPanel from './components/FitnessPanel';
 import JournalTimeline from './components/JournalTimeline';
+import MasterChart from './components/MasterChart';
 import AnalyticsDashboard from './components/Analytics/AnalyticsDashboard';
 import DesktopSidebar from './components/ui/DesktopSidebar';
 import MobileNav from './components/ui/MobileNav';
@@ -83,7 +84,7 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Columna Principal: Visualización y Gráfico */}
               <div className="lg:col-span-8 flex flex-col gap-8">
-                <AnalyticsDashboard />
+                <MasterChart />
                 <div className="hidden lg:block">
                     <SupplementSelector />
                 </div>

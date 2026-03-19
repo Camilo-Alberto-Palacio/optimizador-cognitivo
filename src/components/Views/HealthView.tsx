@@ -56,44 +56,43 @@ const HealthView: React.FC = () => {
                 <p className="text-slate-500 text-xs font-medium mt-1">Análisis detallado de tu motor biológico.</p>
             </header>
 
-            {/* SpO2 - Phone Ergonomic Controller (Full Width in Health View too) */}
-            <div className="bg-slate-900 rounded-[3rem] p-8 text-white border border-slate-800 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 blur-[80px] rounded-full translate-x-12 -translate-y-12" />
+            {/* SpO2 - Rediseño Premium Glass */}
+            <div className="glass-card rounded-[2.5rem] p-6 border-white/40 shadow-xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-400/5 blur-[80px] rounded-full translate-x-12 -translate-y-12" />
                 
-                <div className="relative z-10 space-y-8">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-cyan-400">
-                                <Activity size={28} strokeWidth={2.5} />
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Nivel Saturación</p>
-                                <h3 className="text-sm font-black text-white">Oxígeno Sangre</h3>
+                <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="p-3 bg-cyan-50 text-cyan-500 rounded-2xl shadow-sm border border-cyan-100/50">
+                            <Activity size={24} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Saturación Oxígeno</p>
+                            <div className="flex items-baseline gap-2">
+                                <p className="text-4xl font-black text-slate-800 tracking-tighter">
+                                    {currentSpO2 !== null ? `${currentSpO2}%` : '--'}
+                                </p>
+                                {manualSpO2[selectedDate] && (
+                                    <span className="text-[9px] font-black text-cyan-600 uppercase px-2 py-0.5 bg-cyan-50 rounded-lg border border-cyan-100 flex items-center gap-1">
+                                        <span className="w-1 h-1 bg-cyan-500 rounded-full animate-pulse" /> Manual
+                                    </span>
+                                )}
                             </div>
                         </div>
-                        {manualSpO2[selectedDate] && (
-                            <span className="text-[9px] font-black text-cyan-400 uppercase px-3 py-1 bg-cyan-500/10 rounded-full border border-cyan-500/20">Modo Manual</span>
-                        )}
                     </div>
-
-                    <div className="flex items-center justify-between gap-4">
+                    
+                    <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 w-full sm:w-auto justify-center">
                         <button 
                             onClick={() => updateManualSpO2(currentSpO2 - 1)}
-                            className="w-16 h-16 rounded-3xl bg-slate-800 text-white hover:bg-slate-700 transition-all flex items-center justify-center shadow-lg active:scale-90 border border-slate-700"
+                            className="h-12 px-5 rounded-xl bg-white border border-slate-100 text-slate-600 hover:bg-rose-50 hover:text-rose-500 hover:border-rose-100 transition-all flex items-center justify-center font-black text-xl shadow-sm active:scale-90"
                         >
-                            <span className="text-3xl font-light">-</span>
+                            -
                         </button>
-                        
-                        <div className="text-center">
-                            <p className="text-5xl font-black text-white tracking-tighter">{currentSpO2}%</p>
-                            <p className="text-[10px] font-bold text-cyan-500 mt-1">Saturación Actual</p>
-                        </div>
-
+                        <div className="w-[1px] h-6 bg-slate-200 mx-1" />
                         <button 
                             onClick={() => updateManualSpO2(currentSpO2 + 1)}
-                            className="w-16 h-16 rounded-3xl bg-cyan-600 text-white hover:bg-cyan-500 transition-all flex items-center justify-center shadow-lg active:scale-90 shadow-cyan-900/40"
+                            className="h-12 px-5 rounded-xl bg-white border border-slate-100 text-indigo-600 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all flex items-center justify-center font-black text-xl shadow-sm active:scale-90"
                         >
-                            <span className="text-3xl font-light">+</span>
+                            +
                         </button>
                     </div>
                 </div>

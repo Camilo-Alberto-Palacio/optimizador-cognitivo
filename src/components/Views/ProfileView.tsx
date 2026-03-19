@@ -12,7 +12,8 @@ const ProfileView: React.FC = () => {
         isFetchingFitness,
         accessibility,
         setHighContrast,
-        setFontSize
+        setFontSize,
+        setHasSeenTutorial
     } = useEngineStore();
     const [activeSubView, setActiveSubView] = React.useState<string | null>(null);
 
@@ -111,6 +112,17 @@ const ProfileView: React.FC = () => {
                                 <p className="font-black text-slate-800 mb-1">Contacto Operativo</p>
                                 soporte@quantumperformance.ai
                             </div>
+                        </div>
+                        <div className="mt-6 pt-6 border-t border-slate-100">
+                            <button 
+                                onClick={() => {
+                                    setHasSeenTutorial(false);
+                                    setActiveSubView(null);
+                                }}
+                                className="w-full bg-slate-800 text-white font-black py-4 rounded-2xl hover:bg-slate-700 transition-colors shadow-lg active:scale-95"
+                            >
+                                Iniciar Tutorial de Bienvenida
+                            </button>
                         </div>
                     </div>
                 )}
