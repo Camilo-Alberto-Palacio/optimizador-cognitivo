@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { Plus, Star, Search, FileText, Zap } from 'lucide-react';
+import { Plus, Star, Search, FileText, Zap, Save } from 'lucide-react';
 import { useEngineStore } from '../store/useEngineStore';
+import { LogEvent } from '../types';
 import { SUPPLEMENT_CATALOG } from '../data/supplements';
 
-const SupplementSelector: React.FC = () => {
-    const { favorites, addLog, toggleFavorite } = useEngineStore();
+interface SupplementSelectorProps {
+    initialData?: LogEvent;
+    onComplete?: () => void;
+}
+
+const SupplementSelector: React.FC<SupplementSelectorProps> = ({ initialData, onComplete }) => {
+    const { favorites, addLog, updateLog, toggleFavorite } = useEngineStore();
     
     // getCurrentTime helper 'HH:mm'
     const getCurrentTimeStr = () => {
@@ -12,21 +18,30 @@ const SupplementSelector: React.FC = () => {
         return `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     };
 
-    const [selectedSuppId, setSelectedSuppId] = useState<string>('');
-    const [selectedTime, setSelectedTime] = useState<string>(getCurrentTimeStr());
-    const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
-    const [note, setNote] = useState<string>('');
-    const [searchTerm, setSearchTerm] = useState<string>('');
+    const [selectedSuppId, setSelectedSuppId] = useState<string>(initialData?.supplementId || '');
+    const [selectedTime, setSelectedTime] = useState<string>(initialData?.timeStr || getCurrentTimeStr());
+    const [selectedQuantity, setSelectedQuantity] = useState<number>(initialData?.quantity || 1);
+    const [note, setNote] = useState<string>(initialData?.note || '');
+    const [searchTerm, setSearchTerm] = useState<string>(initialData ? (SUPPLEMENT_CATALOG.find(s => s.id === initialData.supplementId)?.name || '') : '');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedSuppId && selectedTime && selectedQuantity > 0) {
-            addLog(selectedSuppId, selectedTime, selectedQuantity, note || undefined);
-            setSelectedSuppId('');
-            setSearchTerm('');
-            setSelectedQuantity(1);
-            setNote('');
+            if (initialData) {
+                updateLog(initialData.id, selectedSuppId, selectedTime, selectedQuantity, note || undefined);
+            } else {
+                addLog(selectedSuppId, selectedTime, selectedQuantity, note || undefined);
+            }
+            
+            if (onComplete) {
+                onComplete();
+            } else {
+                setSelectedSuppId('');
+                setSearchTerm('');
+                setSelectedQuantity(1);
+                setNote('');
+            }
         }
     };
 
@@ -195,9 +210,10 @@ const SupplementSelector: React.FC = () => {
                         <button 
                             type="submit" 
                             disabled={!selectedSuppId}
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all active:scale-[0.98] flex justify-center items-center gap-3 uppercase tracking-[0.1em] text-xs shadow-lg shadow-indigo-200"
+                            className={`${initialData ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'} flex-1 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all active:scale-[0.98] flex justify-center items-center gap-3 uppercase tracking-[0.1em] text-xs shadow-lg`}
                         >
-                            <Zap size={16} fill="currentColor" /> Registrar Ahora
+                            {initialData ? <Save size={16} fill="currentColor" /> : <Zap size={16} fill="currentColor" />}
+                            {initialData ? 'Guardar Cambios' : 'Registrar Ahora'}
                         </button>
                     </div>
                 </form>

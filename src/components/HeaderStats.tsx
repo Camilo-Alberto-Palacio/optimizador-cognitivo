@@ -36,64 +36,61 @@ const HeaderStats: React.FC = () => {
                 <p className="text-slate-500 text-xs font-medium">Análisis de rendimiento distribuido en tiempo real.</p>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4 items-start md:items-end w-full lg:w-auto">
+            <div className="flex flex-row gap-2 items-center w-full lg:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
                 {/* DATE SELECTOR */}
-                <div className="bg-white shadow-xl shadow-slate-200/50 p-2 px-4 rounded-3xl border border-slate-200 flex items-center gap-4 h-[68px]">
+                <div className="bg-white shadow-xl shadow-slate-200/50 p-2 px-3 md:px-4 rounded-2xl md:rounded-3xl border border-slate-200 flex items-center gap-2 md:gap-4 h-[64px] md:h-[68px] flex-[1.5] min-w-0">
                     <button 
                         onClick={() => navigateDate('prev')}
-                        className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all"
+                        className="p-1.5 md:p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all shrink-0"
                     >
-                        <ChevronLeft size={20} />
+                        <ChevronLeft size={18} />
                     </button>
-                    <div className="text-center min-w-[100px]">
-                        <p className="text-[8px] text-slate-400 font-black uppercase flex items-center justify-center gap-1">
+                    <div className="text-center flex-1 min-w-0">
+                        <p className="hidden md:flex text-[8px] text-slate-400 font-black uppercase items-center justify-center gap-1">
                             <Calendar size={10} /> {selectedDate === today ? 'Fecha Actual' : 'Historial'}
                         </p>
-                        <p className="text-sm font-black text-slate-800 capitalize leading-tight">
+                        <p className="text-xs md:text-sm font-black text-slate-800 capitalize leading-tight truncate">
                             {formatDisplayDate(selectedDate)}
                         </p>
                         {selectedDate !== today && (
-                            <button onClick={() => setSelectedDate(today)} className="text-[9px] text-indigo-500 font-bold hover:underline">
-                                Regresar
+                            <button onClick={() => setSelectedDate(today)} className="text-[9px] text-indigo-500 font-bold hover:underline block mx-auto">
+                                Reset
                             </button>
                         )}
                     </div>
                     <button 
                         onClick={() => navigateDate('next')}
                         disabled={selectedDate >= today}
-                        className="p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all disabled:opacity-20"
+                        className="p-1.5 md:p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all disabled:opacity-20 shrink-0"
                     >
-                        <ChevronRight size={20} />
+                        <ChevronRight size={18} />
                     </button>
                 </div>
 
-                <div className="flex gap-3">
-                    <div className="group relative bg-white shadow-xl shadow-slate-200/50 p-4 rounded-3xl border border-slate-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center cursor-help">
+                <div className="flex gap-2 flex-1 scroll-pl-6">
+                    <div className="group relative bg-white shadow-xl shadow-slate-200/50 p-2 md:p-4 rounded-2xl md:rounded-3xl border border-slate-200 text-center flex-1 min-w-0 h-[64px] md:h-[68px] flex flex-col justify-center cursor-help">
                         {/* Tooltip explanation for BASE */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
                             <p className="font-black text-slate-300 uppercase mb-1 flex items-center gap-1"><Info size={10}/> CI BASE</p>
-                            Es tu potencial natural medido en el test inicial. Es el punto de partida sobre el cual se aplican los ajustes de salud y suplementos.
+                            Es tu potencial natural medido en el test inicial.
                         </div>
-                        <p className="text-[8px] text-slate-400 font-black uppercase mb-1">Tu CI Base</p>
-                        <p className="text-xl md:text-2xl font-black text-slate-800">{baseIq}</p>
+                        <p className="text-[7px] md:text-[8px] text-slate-400 font-black uppercase mb-0.5">Base</p>
+                        <p className="text-lg md:text-2xl font-black text-slate-800">{baseIq}</p>
                     </div>
 
-                    <div className="group relative bg-indigo-50 shadow-xl shadow-indigo-200/50 p-4 rounded-3xl border border-indigo-200 text-center min-w-[100px] h-[68px] flex flex-col justify-center cursor-help">
+                    <div className="group relative bg-indigo-50 shadow-xl shadow-indigo-200/50 p-2 md:p-4 rounded-2xl md:rounded-3xl border border-indigo-200 text-center flex-1 min-w-0 h-[64px] md:h-[68px] flex flex-col justify-center cursor-help">
                         {/* Tooltip explanation for PEAK */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
                             <p className="font-black text-indigo-300 uppercase mb-1 flex items-center gap-1"><Info size={10}/> PEAK ESTIMADO</p>
-                            Calculado como: <br/>
-                            <span className="text-indigo-200 font-bold">Base</span> + <span className="text-rose-300">Ajuste Salud</span> + <span className="text-emerald-300">Impulso Bio-químico</span>.
-                            <br/><br/>
-                            Representa el máximo potencial alcanzable durante el día de hoy.
+                            Máximo potencial alcanzable hoy.
                         </div>
-                        <p className="text-[8px] text-indigo-500 font-black uppercase mb-1">Peak Estimado</p>
-                        <p className="text-xl md:text-2xl font-black text-indigo-700">{maxIq}</p>
+                        <p className="text-[7px] md:text-[8px] text-indigo-500 font-black uppercase mb-0.5">Peak</p>
+                        <p className="text-lg md:text-2xl font-black text-indigo-700">{maxIq}</p>
                     </div>
                 </div>
 
                 {user && (
-                    <div className="flex items-center gap-3 bg-white shadow-lg shadow-slate-200/30 p-2 pr-4 rounded-full border border-slate-200 lg:ml-auto w-full md:w-auto">
+                    <div className="hidden lg:flex items-center gap-3 bg-white shadow-lg shadow-slate-200/30 p-2 pr-4 rounded-full border border-slate-200 lg:ml-auto w-full md:w-auto">
                         <img 
                             src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`} 
                             alt="avatar" 

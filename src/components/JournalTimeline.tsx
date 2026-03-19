@@ -1,9 +1,14 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
 import { useEngineStore, getTodayStr } from '../store/useEngineStore';
+import { LogEvent } from '../types';
 import { SUPPLEMENT_CATALOG } from '../data/supplements';
 
-const JournalTimeline: React.FC = () => {
+interface JournalTimelineProps {
+    onEdit?: (log: LogEvent) => void;
+}
+
+const JournalTimeline: React.FC<JournalTimelineProps> = ({ onEdit }) => {
     const { allLogs, selectedDate, setSelectedDate, toggleLogVisibility, removeLog } = useEngineStore();
     const today = getTodayStr();
 
@@ -32,8 +37,8 @@ const JournalTimeline: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            {/* DATE NAVIGATOR */}
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
+            {/* DATE NAVIGATOR - Hidden on mobile because it redundants HeaderStats */}
+            <div className="hidden lg:block bg-white p-5 rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/50">
                 <div className="flex items-center justify-between">
                     <button
                         onClick={() => navigateDate('prev')}
@@ -101,20 +106,28 @@ const JournalTimeline: React.FC = () => {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-1.5 flex-shrink-0">
+                                        <div className="flex gap-2 flex-shrink-0">
+                                            <button 
+                                                type="button"
+                                                onClick={() => onEdit?.(log)}
+                                                className="p-2.5 rounded-xl bg-slate-50 text-slate-400 border border-slate-200 hover:border-indigo-300 hover:text-indigo-500 transition-all active:scale-90"
+                                                title="Editar registro"
+                                            >
+                                                <Pencil size={14} />
+                                            </button>
                                             <button 
                                                 type="button"
                                                 onClick={() => toggleLogVisibility(log.id)}
-                                                className={`p-1 rounded-lg border transition-all ${log.hidden ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-300 hover:text-indigo-500'}`}
+                                                className={`p-2.5 rounded-xl border transition-all active:scale-90 ${log.hidden ? 'bg-indigo-500 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-200 hover:border-indigo-300 hover:text-indigo-500'}`}
                                             >
-                                                {log.hidden ? <Eye size={12} /> : <EyeOff size={12} />}
+                                                {log.hidden ? <Eye size={14} /> : <EyeOff size={14} />}
                                             </button>
                                             <button 
                                                 type="button"
                                                 onClick={() => removeLog(log.id)}
-                                                className={`${def && def.effectK < 0 ? 'text-rose-600 bg-rose-100 hover:bg-rose-200' : 'text-rose-500 bg-rose-50 hover:bg-rose-100'} p-1 rounded-lg transition-colors`}
+                                                className={`${def && def.effectK < 0 ? 'text-rose-600 bg-rose-100 hover:bg-rose-200' : 'text-rose-500 bg-rose-50 hover:bg-rose-100'} p-2.5 rounded-xl transition-all active:scale-90`}
                                             >
-                                                <Trash2 size={12} />
+                                                <Trash2 size={14} />
                                             </button>
                                         </div>
                                     </div>

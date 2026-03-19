@@ -55,6 +55,7 @@ interface EngineState {
   dismissIqModal: () => void;
   setSelectedDate: (date: string) => void;
   addLog: (supplementId: string, timeStr: string, quantity?: number, note?: string) => void;
+  updateLog: (id: string, supplementId: string, timeStr: string, quantity: number, note?: string) => void;
   removeLog: (id: string) => void;
   toggleFavorite: (supplementId: string) => void;
   toggleLogVisibility: (id: string) => void;
@@ -394,6 +395,21 @@ export const useEngineStore = create<EngineState>()(
           const date = state.selectedDate;
           const newDateLogs = (state.allLogs[date] || []).map(log => 
             log.id === id ? { ...log, hidden: !log.hidden } : log
+          );
+          const newAllLogs = { ...state.allLogs, [date]: newDateLogs };
+          if (state.user) {
+            setDoc(doc(db, 'users', state.user.uid), { allLogs: newAllLogs }, { merge: true });
+          }
+          return { allLogs: newAllLogs };
+        });
+        get().recalculate();
+      },
+
+      updateLog: (id: string, supplementId: string, timeStr: string, quantity: number, note?: string) => {
+        set((state) => {
+          const date = state.selectedDate;
+          const newDateLogs = (state.allLogs[date] || []).map(log => 
+            log.id === id ? { ...log, supplementId, timeStr, quantity, note } : log
           );
           const newAllLogs = { ...state.allLogs, [date]: newDateLogs };
           if (state.user) {

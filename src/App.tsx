@@ -5,7 +5,6 @@ import { useEngineStore } from './store/useEngineStore';
 import HeaderStats from './components/HeaderStats';
 import MasterChart from './components/MasterChart';
 import SupplementSelector from './components/SupplementSelector';
-import DynamicInsights from './components/DynamicInsights';
 import WarningAlerts from './components/ui/WarningAlerts';
 import LoginScreen from './components/LoginScreen';
 import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
@@ -18,6 +17,7 @@ import Modal from './components/ui/Modal';
 import HealthView from './components/Views/HealthView';
 import ProfileView from './components/Views/ProfileView';
 import { useState } from 'react';
+import { LogEvent } from './types';
 
 const App: React.FC = () => {
   const { 
@@ -30,6 +30,7 @@ const App: React.FC = () => {
     dismissIqModal
   } = useEngineStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<LogEvent | null>(null);
 
   useEffect(() => {
     // Escucha en tiempo real si el usuario inicia o cierra sesión
@@ -74,17 +75,17 @@ const App: React.FC = () => {
           {activeView === 'dashboard' ? (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Columna Principal: Visualización y Gráfico */}
-              <div className="lg:col-span-8 flex flex-col gap-8 order-2 lg:order-1">
+              <div className="lg:col-span-8 flex flex-col gap-8">
                 <MasterChart />
                 <div className="hidden lg:block">
                     <SupplementSelector />
                 </div>
               </div>
 
-              {/* Barra Lateral Derecha (Desktop) / Arriba (Mobile): Salud y Bitácora */}
-              <div className="lg:col-span-4 flex flex-col gap-8 order-1 lg:order-2">
+              {/* Barra Lateral Derecha (Desktop) / Abajo (Mobile): Salud y Bitácora */}
+              <div className="lg:col-span-4 flex flex-col gap-8">
                 <FitnessPanel />
-                <JournalTimeline />
+                <JournalTimeline onEdit={(log) => setEditingEvent(log)} />
               </div>
             </div>
           ) : activeView === 'analytics' ? (
@@ -94,8 +95,6 @@ const App: React.FC = () => {
           ) : (
             <ProfileView />
           )}
-
-          <DynamicInsights />
         </div>
       </main>
 
@@ -108,7 +107,21 @@ const App: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)} 
         title="Registrar Optimización"
       >
-        <SupplementSelector />
+        <SupplementSelector onComplete={() => setIsAddModalOpen(false)} />
+      </Modal>
+
+      {/* Modal de Edición */}
+      <Modal
+        isOpen={!!editingEvent}
+        onClose={() => setEditingEvent(null)}
+        title="Editar Registro"
+      >
+        {editingEvent && (
+          <SupplementSelector 
+            initialData={editingEvent} 
+            onComplete={() => setEditingEvent(null)} 
+          />
+        )}
       </Modal>
     </div>
   );
