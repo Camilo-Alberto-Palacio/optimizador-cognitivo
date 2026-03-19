@@ -41,6 +41,7 @@ interface EngineState {
   isLoadingWeekly: boolean;
   stressLevel: Record<string, number>; // Nivel de estrés por 'YYYY-MM-DD' (1-10)
   manualSpO2: Record<string, number>; // Oxígeno manual por 'YYYY-MM-DD'
+  iqModalDismissed: boolean;
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
   loadWeeklyFitnessData: () => Promise<void>;
@@ -86,6 +87,7 @@ export const useEngineStore = create<EngineState>()(
       isLoadingWeekly: false,
       stressLevel: {},
       manualSpO2: {},
+      iqModalDismissed: false,
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });

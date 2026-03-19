@@ -26,9 +26,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
                     <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">{title}</h3>
                     <button 
                         onClick={onClose}
-                        className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
+                        className="p-3 rounded-2xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all active:scale-95"
                     >
-                        <X size={20} />
+                        <X size={24} />
                     </button>
                 </div>
                 

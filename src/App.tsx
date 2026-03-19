@@ -44,10 +44,14 @@ const App: React.FC = () => {
     return <LoginScreen />;
   }
 
+  const { iqModalDismissed, dismissIqModal } = useEngineStore();
+
   // Dashboard de Usuario Autenticado
   return (
     <div className="min-h-screen performance-bg font-sans text-slate-800 flex flex-col lg:flex-row">
-      {!hasCompletedAssessment && <BaselineSetupModal />}
+      {!hasCompletedAssessment && !iqModalDismissed && (
+        <BaselineSetupModal onClose={dismissIqModal} />
+      )}
       
       {/* Sidebar Desktop */}
       <DesktopSidebar />

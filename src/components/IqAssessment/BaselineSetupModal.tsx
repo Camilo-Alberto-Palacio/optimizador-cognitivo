@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { Target, Zap, Check } from 'lucide-react';
+import { Target, Zap, Check, X } from 'lucide-react';
 import IqTestEngine from './IqTestEngine';
 import { useEngineStore } from '../../store/useEngineStore';
 
-export const BaselineSetupModal: React.FC = () => {
+interface BaselineSetupModalProps {
+  onClose?: () => void;
+}
+
+export const BaselineSetupModal: React.FC<BaselineSetupModalProps> = ({ onClose }) => {
   const [mode, setMode] = useState<'selection' | 'manual' | 'test'>('selection');
   const [manualIq, setManualIq] = useState<string>('100');
   
@@ -27,6 +31,16 @@ export const BaselineSetupModal: React.FC = () => {
          {/* Decorative gradient line */}
          <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
          
+         {/* Close Button */}
+         {onClose && (
+           <button 
+             onClick={onClose}
+             className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur-sm rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all shadow-sm border border-slate-100"
+           >
+             <X size={20} />
+           </button>
+         )}
+
          <div className="p-6 md:p-8 flex-1 flex flex-col">
             
             {/* 1. SELECTION MODE */}
