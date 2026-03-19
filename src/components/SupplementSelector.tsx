@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Star, Search, FileText, Zap, Save } from 'lucide-react';
+import { Plus, Star, Search, FileText, Zap, Save, CheckCircle, ArrowRight } from 'lucide-react';
 import { useEngineStore } from '../store/useEngineStore';
 import { LogEvent } from '../types';
 import { SUPPLEMENT_CATALOG } from '../data/supplements';
@@ -24,29 +24,58 @@ const SupplementSelector: React.FC<SupplementSelectorProps> = ({ initialData, on
     const [note, setNote] = useState<string>(initialData?.note || '');
     const [searchTerm, setSearchTerm] = useState<string>(initialData ? (SUPPLEMENT_CATALOG.find(s => s.id === initialData.supplementId)?.name || '') : '');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // DETAILED VALIDATION
+        if (!selectedSuppId) {
+            notify("Error: Debes seleccionar un ítem (Suplemento o Bebida) de la lista.", "error");
+            return;
+        }
+
+        if (selectedQuantity <= 0) {
+            notify("Error: La dosis debe ser al menos de 1 unidad.", "error");
+            return;
+        }
+
+        if (!selectedTime) {
+            notify("Error: La hora es obligatoria para el registro.", "error");
+            return;
+        }
+
         if (selectedSuppId && selectedTime && selectedQuantity > 0) {
             if (initialData) {
-                updateLog(initialData.id, selectedSuppId, selectedTime, selectedQuantity, note || undefined);
-                notify("Cambios guardados con éxito", "success");
+                updateLog(initialData.id, selectedSuppId, selectedTime, selectedQuantity, note);
             } else {
-                addLog(selectedSuppId, selectedTime, selectedQuantity, note || undefined);
-                const supp = SUPPLEMENT_CATALOG.find(s => s.id === selectedSuppId);
-                notify(`Registrado: ${supp?.name || 'Evento'}`, "success");
+                addLog(selectedSuppId, selectedTime, selectedQuantity, note);
             }
             
-            if (onComplete) {
-                onComplete();
-            } else {
-                setSelectedSuppId('');
-                setSearchTerm('');
-                setSelectedQuantity(1);
-                setNote('');
-            }
+            // SHOW SUCCESS SCREEN
+            setIsSuccess(true);
         }
     };
+
+    if (isSuccess) {
+        return (
+            <div className="flex flex-col items-center justify-center p-8 text-center animate-in fade-in zoom-in duration-300 min-h-[400px]">
+                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-emerald-100/50">
+                    <CheckCircle size={40} className="animate-bounce" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-800 mb-2">¡Operación Exitosa!</h3>
+                <p className="text-slate-500 mb-8 max-w-[240px]">
+                    {initialData ? 'Los cambios han sido guardados correctamente en la nube.' : 'El evento ha sido registrado en tu bitácora diaria.'}
+                </p>
+                <button 
+                    onClick={onComplete}
+                    className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                >
+                    Continuar al Inicio <ArrowRight size={20} />
+                </button>
+            </div>
+        );
+    }
 
     const filteredSupplements = SUPPLEMENT_CATALOG.filter(s => 
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 

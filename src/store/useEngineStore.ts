@@ -385,7 +385,7 @@ export const useEngineStore = create<EngineState>()(
             timeStr,
             timestamp: Date.now(),
             quantity,
-            ...(note ? { note } : {})
+            ...(note ? { note } : { note: "" })
           };
           const todayLogs = state.allLogs[date] || [];
           
@@ -436,7 +436,7 @@ export const useEngineStore = create<EngineState>()(
         set((state) => {
           const date = state.selectedDate;
           const newDateLogs = (state.allLogs[date] || []).map(log => 
-            log.id === id ? { ...log, supplementId, timeStr, quantity, note } : log
+            log.id === id ? { ...log, supplementId, timeStr, quantity, note: note || "" } : log
           );
           const newAllLogs = { ...state.allLogs, [date]: newDateLogs };
           if (state.user) {
