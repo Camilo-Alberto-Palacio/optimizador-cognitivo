@@ -62,6 +62,15 @@ interface EngineState {
   updateManualSpO2: (value: number) => void;
   hasSeenTutorial: boolean;
   setHasSeenTutorial: (val: boolean) => void;
+  
+  // Accessibility
+  accessibility: {
+    highContrast: boolean;
+    fontSize: 'normal' | 'large';
+  };
+  setHighContrast: (val: boolean) => void;
+  setFontSize: (size: 'normal' | 'large') => void;
+
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
@@ -105,8 +114,18 @@ export const useEngineStore = create<EngineState>()(
       iqModalDismissed: false,
       notifications: [],
       hasSeenTutorial: false,
+      accessibility: {
+        highContrast: false,
+        fontSize: 'normal'
+      },
 
       setHasSeenTutorial: (val) => set({ hasSeenTutorial: val }),
+      setHighContrast: (val) => set((state) => ({ 
+        accessibility: { ...state.accessibility, highContrast: val } 
+      })),
+      setFontSize: (size) => set((state) => ({ 
+        accessibility: { ...state.accessibility, fontSize: size } 
+      })),
 
       notify: (message: string, type: 'success' | 'error' | 'info' = 'info') => {
         const id = crypto.randomUUID();
@@ -534,7 +553,8 @@ export const useEngineStore = create<EngineState>()(
           manualSpO2: state.manualSpO2,
           weeklyFitnessData: state.weeklyFitnessData,
           iqModalDismissed: state.iqModalDismissed,
-          hasSeenTutorial: state.hasSeenTutorial
+          hasSeenTutorial: state.hasSeenTutorial,
+          accessibility: state.accessibility
       }), 
       onRehydrateStorage: () => (state) => {
         if (state) {

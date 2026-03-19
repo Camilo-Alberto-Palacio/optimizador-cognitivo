@@ -1,10 +1,19 @@
 import React from 'react';
-import { User, ShieldCheck, RefreshCw, LogOut, ChevronRight, Zap, Star, ShieldAlert } from 'lucide-react';
+import { User, ShieldCheck, RefreshCw, LogOut, ChevronRight, Zap, Star, ShieldAlert, Eye } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
 import { auth } from '../../services/firebase';
 
 const ProfileView: React.FC = () => {
-    const { user, baseIq, resetAssessment, loadFitnessData, isFetchingFitness } = useEngineStore();
+    const { 
+        user, 
+        baseIq, 
+        resetAssessment, 
+        loadFitnessData, 
+        isFetchingFitness,
+        accessibility,
+        setHighContrast,
+        setFontSize
+    } = useEngineStore();
     const [activeSubView, setActiveSubView] = React.useState<string | null>(null);
 
     const handleSync = async () => {
@@ -19,6 +28,7 @@ const ProfileView: React.FC = () => {
                 { id: 'iq', label: 'Línea Base Cognitiva', sub: `CI Base Actual: ${baseIq}`, icon: Zap, action: resetAssessment, color: 'text-indigo-500' },
                 { id: 'biopay', label: 'Bio-Parámetros', sub: 'Ajustes de sensibilidad', icon: ShieldCheck, action: () => setActiveSubView('biopay'), color: 'text-emerald-500' },
                 { id: 'sync', label: 'Ecosistema de Datos', sub: 'Configurar Google Fit', icon: RefreshCw, action: () => setActiveSubView('sync'), color: 'text-sky-500' },
+                { id: 'accessibility', label: 'Accesibilidad', sub: 'Contraste y tamaño de texto', icon: Eye, action: () => setActiveSubView('accessibility'), color: 'text-purple-500' },
             ]
         },
         {
@@ -100,6 +110,47 @@ const ProfileView: React.FC = () => {
                             <div className="p-4 bg-slate-50 rounded-2xl text-xs font-medium text-slate-600 border border-slate-100">
                                 <p className="font-black text-slate-800 mb-1">Contacto Operativo</p>
                                 soporte@quantumperformance.ai
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {activeSubView === 'accessibility' && (
+                    <div className="glass-card p-4 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] space-y-8">
+                        <div className="flex items-center gap-4 mb-2">
+                            <div className="p-3 bg-purple-50 text-purple-500 rounded-2xl"><Eye size={24}/></div>
+                            <h3 className="text-xl font-black text-slate-800 tracking-tighter">Visualización</h3>
+                        </div>
+                        
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-[1.5rem] border border-slate-100">
+                                <div>
+                                    <p className="text-sm font-black text-slate-800">Alto Contraste</p>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase">Legibilidad Extrema</p>
+                                </div>
+                                <button 
+                                    onClick={() => setHighContrast(!accessibility.highContrast)}
+                                    className={`w-12 h-6 rounded-full transition-all relative ${accessibility.highContrast ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                >
+                                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${accessibility.highContrast ? 'left-7' : 'left-1'}`} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Escalado de Texto</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button 
+                                        onClick={() => setFontSize('normal')}
+                                        className={`p-4 rounded-2xl border font-black text-sm transition-all ${accessibility.fontSize === 'normal' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-white text-slate-400 border-slate-100'}`}
+                                    >
+                                        Aa Standard
+                                    </button>
+                                    <button 
+                                        onClick={() => setFontSize('large')}
+                                        className={`p-4 rounded-2xl border font-black text-xl transition-all ${accessibility.fontSize === 'large' ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-white text-slate-400 border-slate-100'}`}
+                                    >
+                                        Aa Grande
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

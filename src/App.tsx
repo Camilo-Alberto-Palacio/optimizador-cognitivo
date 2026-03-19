@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { shallow } from 'zustand/shallow';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './services/firebase';
 import { useEngineStore } from './store/useEngineStore';
 import HeaderStats from './components/HeaderStats';
-import MasterChart from './components/MasterChart';
 import SupplementSelector from './components/SupplementSelector';
 import WarningAlerts from './components/ui/WarningAlerts';
 import LoginScreen from './components/LoginScreen';
@@ -16,7 +16,6 @@ import MobileNav from './components/ui/MobileNav';
 import Modal from './components/ui/Modal';
 import HealthView from './components/Views/HealthView';
 import ProfileView from './components/Views/ProfileView';
-import { useState } from 'react';
 import { LogEvent } from './types';
 import ToastContainer from './components/ui/ToastContainer';
 import OnboardingTutorial from './components/ui/OnboardingTutorial';
@@ -29,10 +28,17 @@ const App: React.FC = () => {
     activeView, 
     hasCompletedAssessment,
     iqModalDismissed,
-    dismissIqModal
+    dismissIqModal,
+    accessibility 
   } = useEngineStore();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<LogEvent | null>(null);
+
+  const accessibilityClasses = [
+    accessibility.highContrast ? 'high-contrast' : '',
+    accessibility.fontSize === 'large' ? 'accessibility-large' : ''
+  ].join(' ');
 
   useEffect(() => {
     // Escucha en tiempo real si el usuario inicia o cierra sesión
@@ -55,10 +61,9 @@ const App: React.FC = () => {
     return <LoginScreen />;
   }
 
-
   // Dashboard de Usuario Autenticado
   return (
-    <div className="min-h-screen performance-bg font-sans text-slate-800 flex flex-col lg:flex-row">
+    <div className={`min-h-screen performance-bg font-sans text-slate-800 flex flex-col lg:flex-row transition-all duration-500 ${accessibilityClasses}`}>
       {!hasCompletedAssessment && !iqModalDismissed && (
         <BaselineSetupModal onClose={dismissIqModal} />
       )}
@@ -69,7 +74,7 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 min-w-0 overflow-x-hidden pb-24 lg:pb-0">
-        <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 lg:p-10 space-y-8">
+        <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 lg:p-10 space-y-12">
           
           <HeaderStats />
           <WarningAlerts />
@@ -78,7 +83,7 @@ const App: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Columna Principal: Visualización y Gráfico */}
               <div className="lg:col-span-8 flex flex-col gap-8">
-                <MasterChart />
+                <AnalyticsDashboard />
                 <div className="hidden lg:block">
                     <SupplementSelector />
                 </div>
