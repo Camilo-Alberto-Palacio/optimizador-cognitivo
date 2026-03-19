@@ -60,6 +60,8 @@ interface EngineState {
   updateManualSleep: (hours: number) => void;
   updateStressLevel: (level: number) => void;
   updateManualSpO2: (value: number) => void;
+  hasSeenTutorial: boolean;
+  setHasSeenTutorial: (val: boolean) => void;
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
@@ -102,6 +104,9 @@ export const useEngineStore = create<EngineState>()(
       manualSpO2: {},
       iqModalDismissed: false,
       notifications: [],
+      hasSeenTutorial: false,
+
+      setHasSeenTutorial: (val) => set({ hasSeenTutorial: val }),
 
       notify: (message: string, type: 'success' | 'error' | 'info' = 'info') => {
         const id = crypto.randomUUID();
@@ -528,7 +533,8 @@ export const useEngineStore = create<EngineState>()(
           stressLevel: state.stressLevel,
           manualSpO2: state.manualSpO2,
           weeklyFitnessData: state.weeklyFitnessData,
-          iqModalDismissed: state.iqModalDismissed
+          iqModalDismissed: state.iqModalDismissed,
+          hasSeenTutorial: state.hasSeenTutorial
       }), 
       onRehydrateStorage: () => (state) => {
         if (state) {
