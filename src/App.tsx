@@ -12,9 +12,15 @@ import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
 import FitnessPanel from './components/FitnessPanel';
 import JournalTimeline from './components/JournalTimeline';
 import AnalyticsDashboard from './components/Analytics/AnalyticsDashboard';
+import DesktopSidebar from './components/ui/DesktopSidebar';
+import MobileNav from './components/ui/MobileNav';
+import Modal from './components/ui/Modal';
+import { useState } from 'react';
 
 const App: React.FC = () => {
-  const { user, authLoading, setUser, activeView, setActiveView, loadWeeklyFitnessData } = useEngineStore();
+  const { user, authLoading, setUser, activeView } = useEngineStore();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const hasCompletedAssessment = useEngineStore.getState().hasCompletedAssessment;
 
   useEffect(() => {
     // Escucha en tiempo real si el usuario inicia o cierra sesión
@@ -37,58 +43,56 @@ const App: React.FC = () => {
     return <LoginScreen />;
   }
 
-  const hasCompletedAssessment = useEngineStore.getState().hasCompletedAssessment;
-
   // Dashboard de Usuario Autenticado
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-6 font-sans text-slate-800">
+    <div className="min-h-screen performance-bg font-sans text-slate-800 flex flex-col lg:flex-row">
       {!hasCompletedAssessment && <BaselineSetupModal />}
       
-      <div className="max-w-7xl mx-auto">
-        <HeaderStats />
-        <WarningAlerts />
+      {/* Sidebar Desktop */}
+      <DesktopSidebar />
 
-        {/* Navigation Tabs (v8.0 PRO) */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white border border-slate-200 p-1 rounded-2xl flex gap-1 shadow-sm">
-            <button 
-              onClick={() => setActiveView('dashboard')}
-              className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${activeView === 'dashboard' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Dashboard Diario
-            </button>
-            <button 
-              onClick={() => {
-                setActiveView('analytics');
-                loadWeeklyFitnessData();
-              }}
-              className={`px-6 py-2 rounded-xl text-sm font-black transition-all ${activeView === 'analytics' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              Tendencias PRO
-            </button>
-          </div>
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-x-hidden pb-24 lg:pb-0">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-10 space-y-8">
+          
+          <HeaderStats />
+          <WarningAlerts />
+
+          {activeView === 'dashboard' ? (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Columna Principal: Visualización y Gráfico */}
+              <div className="lg:col-span-8 flex flex-col gap-8 order-2 lg:order-1">
+                <MasterChart />
+                <div className="hidden lg:block">
+                    <SupplementSelector />
+                </div>
+              </div>
+
+              {/* Barra Lateral Derecha (Desktop) / Arriba (Mobile): Salud y Bitácora */}
+              <div className="lg:col-span-4 flex flex-col gap-8 order-1 lg:order-2">
+                <FitnessPanel />
+                <JournalTimeline />
+              </div>
+            </div>
+          ) : (
+            <AnalyticsDashboard />
+          )}
+
+          <FooterAnalysis />
         </div>
+      </main>
 
-        {activeView === 'dashboard' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Barra Lateral Izquierda: Datos de Salud y Bitácora */}
-            <div className="lg:col-span-3 flex flex-col gap-6">
-              <FitnessPanel />
-              <JournalTimeline />
-            </div>
+      {/* Navegación Móvil */}
+      <MobileNav onOpenAddModal={() => setIsAddModalOpen(true)} />
 
-            {/* Columna Principal: Visualización y Acción */}
-            <div className="lg:col-span-9 flex flex-col gap-6">
-              <MasterChart />
-              <SupplementSelector />
-            </div>
-          </div>
-        ) : (
-          <AnalyticsDashboard />
-        )}
-
-        <FooterAnalysis />
-      </div>
+      {/* Modal de Registro (FAB Action) */}
+      <Modal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        title="Registrar Optimización"
+      >
+        <SupplementSelector />
+      </Modal>
     </div>
   );
 };
