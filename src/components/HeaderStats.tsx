@@ -36,9 +36,9 @@ const HeaderStats: React.FC = () => {
                 <p className="text-slate-500 text-xs font-medium">Análisis de rendimiento distribuido en tiempo real.</p>
             </div>
 
-            <div className="flex flex-row gap-2 items-center w-full lg:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
+            <div className="flex flex-row gap-1.5 md:gap-4 items-center w-full lg:w-auto pb-1 md:pb-0">
                 {/* DATE SELECTOR */}
-                <div className="bg-white shadow-xl shadow-slate-200/50 p-2 px-3 md:px-4 rounded-2xl md:rounded-3xl border border-slate-200 flex items-center gap-2 md:gap-4 h-[64px] md:h-[68px] flex-[1.5] min-w-0">
+                <div className="bg-white shadow-xl shadow-slate-200/50 p-1.5 md:p-2 px-2 md:px-4 rounded-2xl md:rounded-3xl border border-slate-200 flex items-center gap-1.5 md:gap-4 h-[64px] md:h-[68px] flex-[1.4] min-w-0">
                     <button 
                         onClick={() => navigateDate('prev')}
                         className="p-1.5 md:p-2 rounded-xl bg-slate-50 hover:bg-indigo-50 text-slate-400 hover:text-indigo-600 transition-all shrink-0"
@@ -67,7 +67,7 @@ const HeaderStats: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="flex gap-2 flex-1 scroll-pl-6">
+                <div className="flex gap-2 flex-1">
                     <div className="group relative bg-white shadow-xl shadow-slate-200/50 p-2 md:p-4 rounded-2xl md:rounded-3xl border border-slate-200 text-center flex-1 min-w-0 h-[64px] md:h-[68px] flex flex-col justify-center cursor-help">
                         {/* Tooltip explanation for BASE */}
                         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-[10px] p-3 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-2xl z-50 leading-relaxed text-left">
