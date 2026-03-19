@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { shallow } from 'zustand/shallow';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './services/firebase';
 import { useEngineStore } from './store/useEngineStore';
