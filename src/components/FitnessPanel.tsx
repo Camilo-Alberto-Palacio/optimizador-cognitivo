@@ -16,7 +16,9 @@ const FitnessPanel: React.FC = () => {
         selectedDate,
         updateManualSleep,
         stressLevel,
-        updateStressLevel
+        updateStressLevel,
+        manualSpO2,
+        updateManualSpO2
     } = useEngineStore();
 
     const [isReconnecting, setIsReconnecting] = useState(false);
@@ -124,13 +126,14 @@ const FitnessPanel: React.FC = () => {
     const rawSleep = fitnessData.sleepHours;
     // Combinar dato de Google Fit con ajuste manual
     const sleepHours = rawSleep !== null ? Math.max(0, rawSleep + adjustment) : (adjustment > 0 ? adjustment : null);
-    const { restingHeartRate, steps, activeCalories, spo2, lastFetched } = fitnessData;
+    const { restingHeartRate, steps, activeCalories, lastFetched } = fitnessData;
     const currentStress = stressLevel[selectedDate] || 1;
+    const currentSpO2 = manualSpO2[selectedDate] || fitnessData.spo2;
     
-    // Check if ALL fields are null (indicates successful API call but no data found)
-    const hasData = sleepHours !== null || restingHeartRate !== null || steps !== null || activeCalories !== null;
+    // Alertas y cálculos
+    const hasData = sleepHours !== null || restingHeartRate !== null || steps !== null || activeCalories !== null || currentSpO2 !== null;
 
-    const adjustedIq = (baseIq && fitnessData) ? calculateFitnessImpact({ ...fitnessData, sleepHours }, baseIq) : null;
+    const adjustedIq = (baseIq && fitnessData) ? calculateFitnessImpact({ ...fitnessData, sleepHours, spo2: currentSpO2 }, baseIq) : null;
     const iqDelta = adjustedIq && baseIq ? adjustedIq - baseIq : 0;
 
     const getSleepColor = (h: number | null) => {
@@ -297,12 +300,42 @@ const FitnessPanel: React.FC = () => {
                             <Activity size={13} className="text-cyan-400" />
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Oxígeno SpO2</span>
                         </div>
-                        <p className={`text-xl font-black ${spo2 !== null && spo2 >= 95 ? 'text-cyan-600' : spo2 !== null && spo2 >= 90 ? 'text-amber-500' : 'text-rose-600'}`}>
-                            {spo2 !== null ? `${spo2}%` : '--'}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-medium">
-                            {spo2 !== null ? (spo2 >= 95 ? 'Óptimo ✓' : spo2 >= 90 ? 'Bajo' : 'Alerta') : 'Sin datos'}
-                        </p>
+                        
+                        <div className="flex items-end justify-between">
+                            <div>
+                                <p className={`text-xl font-black ${currentSpO2 !== null && currentSpO2 >= 95 ? 'text-cyan-600' : currentSpO2 !== null && currentSpO2 >= 90 ? 'text-amber-500' : 'text-rose-600'}`}>
+                                    {currentSpO2 !== null ? `${currentSpO2}%` : '--'}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                    {currentSpO2 !== null ? (currentSpO2 >= 95 ? 'Óptimo ✓' : currentSpO2 >= 90 ? 'Bajo' : 'Alerta') : 'Sin datos'}
+                                </p>
+                            </div>
+
+                            {/* Ajuste Manual SpO2 */}
+                            <div className="flex flex-col items-center gap-1">
+                                <button 
+                                    onClick={() => updateManualSpO2((currentSpO2 || 98) + 1)}
+                                    className="p-1 rounded-md bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors"
+                                    title="Aumentar SpO2"
+                                >
+                                    <Activity size={10} className="rotate-90" />
+                                    <span className="text-[8px] font-bold">+1%</span>
+                                </button>
+                                <button 
+                                    onClick={() => updateManualSpO2((currentSpO2 || 98) - 1)}
+                                    className="p-1 rounded-md bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-400 transition-colors"
+                                    title="Disminuir SpO2"
+                                >
+                                    <span className="text-[8px] font-bold">-1%</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {manualSpO2[selectedDate] !== undefined && (
+                            <div className="mt-1 text-[8px] font-bold text-cyan-500 italic bg-cyan-50/50 px-1.5 py-0.5 rounded-full inline-block">
+                                Ajuste manual: {manualSpO2[selectedDate]}%
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -40,12 +40,14 @@ interface EngineState {
   weeklyFitnessData: Record<string, FitnessData>;
   isLoadingWeekly: boolean;
   stressLevel: Record<string, number>; // Nivel de estrés por 'YYYY-MM-DD' (1-10)
+  manualSpO2: Record<string, number>; // Oxígeno manual por 'YYYY-MM-DD'
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
   loadWeeklyFitnessData: () => Promise<void>;
   setActiveView: (view: 'dashboard' | 'analytics') => void;
   updateManualSleep: (hours: number) => void;
   updateStressLevel: (level: number) => void;
+  updateManualSpO2: (value: number) => void;
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
@@ -83,6 +85,7 @@ export const useEngineStore = create<EngineState>()(
       weeklyFitnessData: {},
       isLoadingWeekly: false,
       stressLevel: {},
+      manualSpO2: {},
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });
@@ -183,6 +186,20 @@ export const useEngineStore = create<EngineState>()(
         get().recalculate();
       },
 
+      updateManualSpO2: (value: number) => {
+        const { selectedDate, manualSpO2, user } = get();
+        const newSpO2 = {
+          ...manualSpO2,
+          [selectedDate]: Math.round(Math.max(50, Math.min(100, value))) // Rango seguro
+        };
+        set({ manualSpO2: newSpO2 });
+        if (user) {
+          setDoc(doc(db, 'users', user.uid), { manualSpO2: newSpO2 }, { merge: true })
+            .catch(err => console.error("Error saving manual SpO2 to cloud:", err));
+        }
+        get().recalculate();
+      },
+
       getLogsForDate: (date: string) => {
         return get().allLogs[date] || [];
       },
@@ -256,6 +273,10 @@ export const useEngineStore = create<EngineState>()(
 
               if (data.stressLevel) {
                 set({ stressLevel: data.stressLevel });
+              }
+
+              if (data.manualSpO2) {
+                set({ manualSpO2: data.manualSpO2 });
               }
 
               if (cloudAllLogs) {
@@ -394,7 +415,7 @@ export const useEngineStore = create<EngineState>()(
       },
 
       recalculate: () => {
-        const { allLogs, selectedDate, baseIq, fitnessData, manualSleepAdjustment, stressLevel } = get();
+        const { allLogs, selectedDate, baseIq, fitnessData, manualSleepAdjustment, stressLevel, manualSpO2 } = get();
         const logs = allLogs[selectedDate] || [];
         
         const staticBaseIq = baseIq || 133;
@@ -419,9 +440,25 @@ export const useEngineStore = create<EngineState>()(
           
           const adjustedFitness = {
             ...fitnessData,
-            sleepHours: rawSleep !== null ? Math.max(0, rawSleep + adj) : (adj > 0 ? adj : null)
+            sleepHours: rawSleep !== null ? Math.max(0, rawSleep + adj) : (adj > 0 ? adj : null),
+            spo2: manualSpO2[selectedDate] || fitnessData.spo2 // Priorizar manual
           };
           effectiveBaseIq = calculateFitnessImpact(adjustedFitness, staticBaseIq);
+        } else {
+          // Si no hay datos de fitness, pero hay ajustes manuales de sueño o SpO2
+          const manualSleep = Number(manualSleepAdjustment[selectedDate] || 0);
+          const manualOxy = manualSpO2[selectedDate] || null;
+          if (manualSleep !== 0 || manualOxy !== null) {
+              const dummyFitness: FitnessData = {
+                  sleepHours: manualSleep > 0 ? manualSleep : null,
+                  restingHeartRate: null,
+                  steps: null,
+                  spo2: manualOxy,
+                  activeCalories: null,
+                  lastFetched: Date.now()
+              };
+              effectiveBaseIq = calculateFitnessImpact(dummyFitness, staticBaseIq);
+          }
         }
 
         set({
@@ -441,6 +478,7 @@ export const useEngineStore = create<EngineState>()(
           fitAccessToken: state.fitAccessToken,
           manualSleepAdjustment: state.manualSleepAdjustment,
           stressLevel: state.stressLevel,
+          manualSpO2: state.manualSpO2,
           weeklyFitnessData: state.weeklyFitnessData
       }), 
       onRehydrateStorage: () => (state) => {
