@@ -1,63 +1,39 @@
-@startuml DataFlow_v2
+@startuml DataFlow_v9
 skinparam defaultTextAlignment center
 skinparam backgroundColor #FAFAFA
-title Flujo de Datos - Bio-Sincronización y Motor Cognitivo
+title Flujo de Datos v9.0 - Quantum Bio-Optimization
 
 actor "Usuario" as User
 participant "App / UI" as UI
 participant "useEngineStore" as Store
-participant "googleFit.ts" as FitService
-participant "calculator.ts" as CalcEngine
+participant "CalcEngine" as Calc
 participant "Firestore" as DB
-participant "MasterChart" as View
 
-== Sincronización de Salud (Google Fit) ==
-User -> UI : Pulsa "Refrescar" o Cambia Fecha
-UI -> Store : loadFitnessData()
-Store -> FitService : fetchFitnessData(token, date)
+== Registro de Biometría Manual (Premium) ==
+User -> UI : Ajusta SpO2 (+/-) o Estrés (Slider)
+UI -> Store : updateManualSpO2(val) / updateStress(val)
+Store -> DB : Sync Realtime Document
+Store -> Store : recalculateAll()
+Store -> Calc : calculateCI(biometrics, supplements)
+Calc --> Store : CI Actualizado (v9 Logic)
+Store --> UI : Feedback Visual (Glass UI)
 
-activate FitService
-FitService -> FitService : mergeSleepIntervals()\n(Triple Verificación)
-FitService --> Store : FitnessData {sleep, steps, bpm}
-deactivate FitService
+== Consulta de Evidencia Científica ==
+User -> UI : Click "Bibliografía Científica" en Perfil
+UI -> UI : setActiveSubView('bibliography')
+UI -> UI : Renderiza BibliographyView (APA 7)
 
-Store -> CalcEngine : calculateDailyPerformance(logs, baseIq, fitness)
-CalcEngine --> Store : ChartDataPoint {iqBase, iqFitness, iqBoost}
-Store --> View : Renderiza desgloses y curva
+== Accesibilidad Dinámica ==
+User -> UI : Toggle Alto Contraste / Tamaño Aa
+UI -> Store : setHighContrast() / setFontSize()
+Store --> UI : Inyección de Clases CSS Globales
+UI -> UI : Re-render con rem escalados
 
-== Manejo de Expiración (Token Refresh) ==
-Store -> FitService : fetch (recibe 401 UNAUTHORIZED)
-Store -> FB : refreshGoogleFitToken()
-FB --> Store : setFitToken(newToken)
-Store -> Store : loadFitnessData() (auto-retry)
+== Sincronización de Altura/SpO2 (Google Fit) ==
+Store -> DB : fetch doc 'biometrics'
+DB --> Store : { manualSpO2: 98, manualStress: 2 }
+Store --> Calc : Prioriza manual sobre Fit API (Override)
 
-== Analítica Semanal (Tendencias) ==
-User -> UI : Cambia a pestaña "Tendencias"
-UI -> Store : setActiveView('analytics')
-Store -> Store : loadWeeklyFitnessData()
-Store -> FitService : fetch múltiple (7 días)
-FitService --> Store : Record<Date, FitnessData>
-Store --> UI : Renderiza AnalyticsDashboard
-
-== Ajuste Manual de Sueño ==
-User -> UI : Click +0.5h / -0.5h
-UI -> Store : updateManualSleep(delta)
-Store -> DB : sync manualSleepAdjustment
-Store -> Store : recalculate()
-Store --> View : Actualización inmediata del CI
-
-== Registro de suplementos ==
-User -> UI : Selecciona Favorito o Busca Nootrópico
-UI -> Store : addLog(suppId, time, qty)
-Store -> DB : setDoc(logs)
-Store -> Store : recalculate()
-Store --> View : Actualiza curva con impacto farmacocinético
-
-== Visibilidad de Logs ==
-User -> UI : Toggle "Ojo" (Ocultar)
-UI -> Store : toggleLogVisibility(logId)
-Store -> CalcEngine : Filtra logs.hidden === false
-Store -> Store : recalculate()
-Store --> View : Muestra impacto del retiro del suplemento
+@enduml
 
 @enduml

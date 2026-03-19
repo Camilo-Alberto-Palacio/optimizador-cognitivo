@@ -1,36 +1,35 @@
-@startuml Architecture_v2
+@startuml Architecture_v9
 skinparam componentStyle rectangle
 skinparam backgroundColor #FAFAFA
-title Arquitectura del Sistema - Optimizador Cognitivo v8.0 Enterprise
+title Arquitectura del Sistema - Quantum Biohacking Engine v9.0 Final
 
-package "Capa de UI (React Components)" #EEF2FF {
+package "Capa de UI (React + Tailwind)" #EEF2FF {
   [App.tsx] as App <<Orchestrator>>
   [JournalTimeline.tsx] as Journal <<Historial + Fechas>>
   [SupplementSelector.tsx] as Selector <<Favoritos + Registro>>
-  [FitnessPanel.tsx] as Fitness <<Salud + Ajustes + Reconnect>>
-  [MasterChart.tsx] as Chart <<Recharts>>
-  [AnalyticsDashboard.tsx] as Analytics <<Trends + Reports>>
-  [HeaderStats.tsx] as Stats
-  [WarningAlerts.tsx] as Alerts <<Medical Panel>>
+  [FitnessPanel.tsx] as Fitness <<SpO2 XL + Stress UI + Health Bento>>
+  [MasterChart.tsx] as Chart <<Recharts v2>>
+  [AnalyticsDashboard.tsx] as Analytics <<7-Day Trends>>
+  [BibliographyView.tsx] as Biblio <<Evidencia APA 7>>
+  [HeaderStats.tsx] as Stats <<CI Dinámico>>
   [LoginScreen.tsx] as Login
-  [IqAssessment/] as IQ <<Test Cognitivo>>
+  [Profile/Accessibility] as Profile <<Tú + Guía + Inclusión>>
 }
 
 package "Capa de Estado (Zustand v5)" #F0FDF4 {
-  [useEngineStore] as Store <<Persist + Cloud Sync>>
+  [useEngineStore] as Store <<Persist + Accessibility State + Cloud Sync>>
 }
 
-package "Motor de Lógica (Domain Engine)" #FFF7ED {
-  [calculator.ts] as CalcEngine <<Farmacocinética + CI Breakdown>>
-  [googleFit.ts] as FitService <<Triple Verificación>>
-  [supplements.ts] as Catalog <<~100 entradas>>
+package "Motor de Lógica (Quantum Engine)" #FFF7ED {
+  [calculator.ts] as CalcEngine <<Farmacocinética Multi-Variable + CI Logic>>
+  [googleFit.ts] as FitService <<Biometría Triple Sincronizada>>
+  [supplements.ts] as Catalog <<Base de Datos Nootrópicos/Alimentos>>
 }
 
-package "Servicios de Plataforma" #F0F4FF {
-  [Google Fit API] as FitAPI <<OAuth Restricted>>
-  [Firebase Auth/DB] as Cloud <<Cloud Sync>>
-  [Firebase Services] as FbSrv <<refreshGoogleFitToken>>
-  [Vite PWA] as PWA <<Offline Support>>
+package "Servicios Cloud" #F0F4FF {
+  [Google Fit API] as FitAPI <<OAuth2>>
+  [Firebase Firestore] as DB <<Persistencia Realtime>>
+  [Firebase Auth] as Auth <<Social Login>>
 }
 
 ' UI a Zustand/Servicios
@@ -38,31 +37,22 @@ App --> Journal
 App --> Selector
 App --> Fitness
 App --> Chart
-App --> Analytics : "si activeView === 'analytics'"
-App --> Stats
+App --> Analytics
+App --> Biblio : "vía Profile menu"
 App --> Login : "si !user"
-App --> IQ : "si !assessmentCompleted"
+App --> Profile
 
-Store ..> Journal : "allLogs[date]"
+Store ..> Journal : "allLogs"
 Store ..> Selector : "favorites"
-Store ..> Fitness : "fitnessData\nmanualSleepAdjustment"
-Store ..> Chart : "chartData[iqBase/Fit/Boost]"
-Store ..> Stats : "baseIq\nselectedDate"
+Store ..> Fitness : "spo2/stress manual"
+Store ..> Chart : "iqDataPoints"
+Store ..> Profile : "hasSeenTutorial / config"
 
-Journal ..> Store : "setSelectedDate()\ntoggleLogVisibility()"
-Selector ..> Store : "addLog()\ntoggleFavorite()"
-Fitness ..> Store : "loadFitnessData()\nupdateManualSleep()"
-
-' Zustand a Motor
-Store -down-> CalcEngine : "logs[], baseIq, fitness"
-CalcEngine -up-> Store : "ChartDataPoint[]"
-Store -down-> FitService : "fetchFitnessData(token)"
-FitService -up-> Store : "FitnessData"
-FitService -right-> FitAPI : "REST POST/JSON"
-
-' Servicios
-Cloud --> Store : "Auth + Firestore Sync"
-FbSrv --> Store : "Nuevo Access Token"
-PWA --> App : "Offline Cache"
+' Sincronización
+Store -down-> CalcEngine : "Data Stream"
+Store -down-> FitService : "Sync Request"
+FitService -right-> FitAPI : "REST"
+DB <-left-> Store : "Firestore Sync"
+Auth --> Store : "JWT / Profile"
 
 @enduml
