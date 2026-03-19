@@ -23,7 +23,7 @@ const DesktopSidebar: React.FC = () => {
     ];
 
     return (
-        <aside className="hidden lg:flex flex-col w-64 h-screen sticky top-0 bg-white border-r border-slate-200 z-50">
+        <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 bg-white border-r border-slate-200 z-50">
             {/* Logo Area */}
             <div className="p-8">
                 <div className="flex items-center gap-3">

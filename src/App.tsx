@@ -5,7 +5,7 @@ import { useEngineStore } from './store/useEngineStore';
 import HeaderStats from './components/HeaderStats';
 import MasterChart from './components/MasterChart';
 import SupplementSelector from './components/SupplementSelector';
-import FooterAnalysis from './components/FooterAnalysis';
+import DynamicInsights from './components/DynamicInsights';
 import WarningAlerts from './components/ui/WarningAlerts';
 import LoginScreen from './components/LoginScreen';
 import BaselineSetupModal from './components/IqAssessment/BaselineSetupModal';
@@ -18,9 +18,8 @@ import Modal from './components/ui/Modal';
 import { useState } from 'react';
 
 const App: React.FC = () => {
-  const { user, authLoading, setUser, activeView } = useEngineStore();
+  const { user, authLoading, setUser, activeView, hasCompletedAssessment } = useEngineStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const hasCompletedAssessment = useEngineStore.getState().hasCompletedAssessment;
 
   useEffect(() => {
     // Escucha en tiempo real si el usuario inicia o cierra sesión
@@ -50,10 +49,11 @@ const App: React.FC = () => {
       
       {/* Sidebar Desktop */}
       <DesktopSidebar />
+      <div className="hidden lg:block w-64 flex-shrink-0" />
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-x-hidden pb-24 lg:pb-0">
-        <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-10 space-y-8">
+      <main className="flex-1 min-w-0 overflow-x-hidden pb-24 lg:pb-0">
+        <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 lg:p-10 space-y-8">
           
           <HeaderStats />
           <WarningAlerts />
@@ -78,7 +78,7 @@ const App: React.FC = () => {
             <AnalyticsDashboard />
           )}
 
-          <FooterAnalysis />
+          <DynamicInsights />
         </div>
       </main>
 

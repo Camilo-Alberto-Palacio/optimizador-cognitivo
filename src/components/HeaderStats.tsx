@@ -28,12 +28,12 @@ const HeaderStats: React.FC = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-6">
             <div className="space-y-1">
                 <div className="flex items-center gap-2 text-indigo-600 font-bold tracking-[0.2em] text-[10px] uppercase bg-indigo-50 px-3 py-1 rounded-full w-fit border border-indigo-200">
-                    <Activity size={12} /> Quantum Performance Engine v8.0
+                    <Activity size={12} /> Quantum Performance Engine v8.5 PRO
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-slate-800 tracking-tighter">
-                    Bienestar <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500">Universal</span>
+                    Estado <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500">Cognitivo</span>
                 </h1>
-                <p className="text-slate-500 text-xs font-medium">Línea de tiempo estructurada para máximo rendimiento cognitivo.</p>
+                <p className="text-slate-500 text-xs font-medium">Análisis de rendimiento distribuido en tiempo real.</p>
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-end w-full lg:w-auto">
