@@ -1,7 +1,9 @@
 import React from 'react';
-import { User, ShieldCheck, RefreshCw, LogOut, ChevronRight, Zap, Star, ShieldAlert, Eye } from 'lucide-react';
+import { User, ShieldCheck, RefreshCw, LogOut, ChevronRight, Zap, Star, ShieldAlert, Eye, GraduationCap } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
 import { auth } from '../../services/firebase';
+import BibliographyView from './BibliographyView';
+
 
 const ProfileView: React.FC = () => {
     const { 
@@ -37,6 +39,12 @@ const ProfileView: React.FC = () => {
             items: [
                 { id: 'security', label: 'Protección de Datos', sub: 'Encriptación biométrica activa', icon: Star, action: () => setActiveSubView('security'), color: 'text-amber-500' },
                 { id: 'support', label: 'Protocolo de Soporte', sub: 'Guía de uso v8.5 PRO', icon: ShieldAlert, action: () => setActiveSubView('support'), color: 'text-rose-500' },
+            ]
+        },
+        {
+            title: "Evidencia y Ciencia",
+            items: [
+                { id: 'bibliography', label: 'Bibliografía Científica', sub: 'Fuentes APA 7 y Modelos', icon: GraduationCap, action: () => setActiveSubView('bibliography'), color: 'text-indigo-600' },
             ]
         }
     ];
@@ -166,6 +174,9 @@ const ProfileView: React.FC = () => {
                             </div>
                         </div>
                     </div>
+                )}
+                {activeSubView === 'bibliography' && (
+                    <BibliographyView />
                 )}
             </div>
         );
