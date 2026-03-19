@@ -36,7 +36,7 @@ interface EngineState {
   isFetchingFitness: boolean;
   manualSleepAdjustment: Record<string, number>; // Ajuste de horas por 'YYYY-MM-DD'
   // Analytics
-  activeView: 'dashboard' | 'analytics';
+  activeView: 'dashboard' | 'analytics' | 'health' | 'profile';
   weeklyFitnessData: Record<string, FitnessData>;
   isLoadingWeekly: boolean;
   stressLevel: Record<string, number>; // Nivel de estrés por 'YYYY-MM-DD' (1-10)
@@ -44,7 +44,7 @@ interface EngineState {
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
   loadWeeklyFitnessData: () => Promise<void>;
-  setActiveView: (view: 'dashboard' | 'analytics') => void;
+  setActiveView: (view: 'dashboard' | 'analytics' | 'health' | 'profile') => void;
   updateManualSleep: (hours: number) => void;
   updateStressLevel: (level: number) => void;
   updateManualSpO2: (value: number) => void;
@@ -93,7 +93,7 @@ export const useEngineStore = create<EngineState>()(
         setTimeout(() => get().loadFitnessData(), 500);
       },
 
-      setActiveView: (view) => set({ activeView: view }),
+      setActiveView: (view: 'dashboard' | 'analytics' | 'health' | 'profile') => set({ activeView: view }),
 
       loadFitnessData: async () => {
         const { fitAccessToken, selectedDate } = get();

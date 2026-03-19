@@ -15,6 +15,8 @@ import AnalyticsDashboard from './components/Analytics/AnalyticsDashboard';
 import DesktopSidebar from './components/ui/DesktopSidebar';
 import MobileNav from './components/ui/MobileNav';
 import Modal from './components/ui/Modal';
+import HealthView from './components/Views/HealthView';
+import ProfileView from './components/Views/ProfileView';
 import { useState } from 'react';
 
 const App: React.FC = () => {
@@ -74,8 +76,12 @@ const App: React.FC = () => {
                 <JournalTimeline />
               </div>
             </div>
-          ) : (
+          ) : activeView === 'analytics' ? (
             <AnalyticsDashboard />
+          ) : activeView === 'health' ? (
+            <HealthView />
+          ) : (
+            <ProfileView />
           )}
 
           <DynamicInsights />

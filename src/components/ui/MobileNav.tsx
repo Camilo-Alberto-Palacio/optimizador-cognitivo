@@ -46,13 +46,19 @@ const MobileNav: React.FC<MobileNavProps> = ({ onOpenAddModal }) => {
                 </button>
             </div>
 
-            <button className="flex flex-col items-center gap-1 text-slate-400">
-                <Heart size={20} strokeWidth={2} />
+            <button 
+                onClick={() => setActiveView('health')}
+                className={`flex flex-col items-center gap-1 transition-all ${activeView === 'health' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}
+            >
+                <Heart size={20} strokeWidth={activeView === 'health' ? 3 : 2} />
                 <span className="text-[9px] font-bold uppercase tracking-widest">Salud</span>
             </button>
 
-            <button className="flex flex-col items-center gap-1 text-slate-400">
-                <User size={20} strokeWidth={2} />
+            <button 
+                onClick={() => setActiveView('profile')}
+                className={`flex flex-col items-center gap-1 transition-all ${activeView === 'profile' ? 'text-indigo-600 scale-110' : 'text-slate-400'}`}
+            >
+                <User size={20} strokeWidth={activeView === 'profile' ? 3 : 2} />
                 <span className="text-[9px] font-bold uppercase tracking-widest">Tú</span>
             </button>
         </nav>
