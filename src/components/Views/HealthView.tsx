@@ -33,15 +33,6 @@ const HealthView: React.FC = () => {
             bg: 'bg-rose-50' 
         },
         { 
-            id: 'spo2', 
-            label: 'Oxigenación (SpO2)', 
-            value: `${fitnessData?.spo2 || 98}%`, 
-            sub: 'Saturación estable',
-            icon: Activity, 
-            color: 'text-emerald-500', 
-            bg: 'bg-emerald-50' 
-        },
-        { 
             id: 'steps', 
             label: 'Pasos Diarios', 
             value: (fitnessData?.steps || 0).toLocaleString(), 
@@ -52,8 +43,11 @@ const HealthView: React.FC = () => {
         }
     ];
 
+    const { manualSpO2, updateManualSpO2 } = useEngineStore();
+    const currentSpO2 = manualSpO2[selectedDate] || fitnessData?.spo2 || 98;
+
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8 pb-10">
             <header className="px-2">
                 <div className="flex items-center gap-2 text-indigo-600 font-bold tracking-[0.2em] text-[10px] uppercase bg-indigo-50 px-3 py-1 rounded-full w-fit mb-3">
                     <Zap size={10} /> Quantum Bio-Metrics
@@ -61,6 +55,49 @@ const HealthView: React.FC = () => {
                 <h2 className="text-3xl font-black text-slate-800 leading-tight">Estado Vital</h2>
                 <p className="text-slate-500 text-xs font-medium mt-1">Análisis detallado de tu motor biológico.</p>
             </header>
+
+            {/* SpO2 - Phone Ergonomic Controller (Full Width in Health View too) */}
+            <div className="bg-slate-900 rounded-[3rem] p-8 text-white border border-slate-800 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/10 blur-[80px] rounded-full translate-x-12 -translate-y-12" />
+                
+                <div className="relative z-10 space-y-8">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-cyan-400">
+                                <Activity size={28} strokeWidth={2.5} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Nivel Saturación</p>
+                                <h3 className="text-sm font-black text-white">Oxígeno Sangre</h3>
+                            </div>
+                        </div>
+                        {manualSpO2[selectedDate] && (
+                            <span className="text-[9px] font-black text-cyan-400 uppercase px-3 py-1 bg-cyan-500/10 rounded-full border border-cyan-500/20">Modo Manual</span>
+                        )}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4">
+                        <button 
+                            onClick={() => updateManualSpO2(currentSpO2 - 1)}
+                            className="w-16 h-16 rounded-3xl bg-slate-800 text-white hover:bg-slate-700 transition-all flex items-center justify-center shadow-lg active:scale-90 border border-slate-700"
+                        >
+                            <span className="text-3xl font-light">-</span>
+                        </button>
+                        
+                        <div className="text-center">
+                            <p className="text-5xl font-black text-white tracking-tighter">{currentSpO2}%</p>
+                            <p className="text-[10px] font-bold text-cyan-500 mt-1">Saturación Actual</p>
+                        </div>
+
+                        <button 
+                            onClick={() => updateManualSpO2(currentSpO2 + 1)}
+                            className="w-16 h-16 rounded-3xl bg-cyan-600 text-white hover:bg-cyan-500 transition-all flex items-center justify-center shadow-lg active:scale-90 shadow-cyan-900/40"
+                        >
+                            <span className="text-3xl font-light">+</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             {/* Stress Summary Row */}
             <div className="glass-card p-6 rounded-[2.5rem] flex items-center justify-between">

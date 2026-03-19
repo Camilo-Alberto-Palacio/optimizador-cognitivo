@@ -52,6 +52,7 @@ interface EngineState {
   // Methods
   setBaseIq: (iq: number) => void;
   resetAssessment: () => void;
+  dismissIqModal: () => void;
   setSelectedDate: (date: string) => void;
   addLog: (supplementId: string, timeStr: string, quantity?: number, note?: string) => void;
   removeLog: (id: string) => void;
@@ -332,8 +333,10 @@ export const useEngineStore = create<EngineState>()(
       },
 
       resetAssessment: () => {
-          set({ hasCompletedAssessment: false, baseIq: null });
+          set({ hasCompletedAssessment: false, baseIq: null, iqModalDismissed: false });
       },
+
+      dismissIqModal: () => set({ iqModalDismissed: true }),
 
       setSelectedDate: (date: string) => {
         set({ selectedDate: date });
@@ -481,7 +484,8 @@ export const useEngineStore = create<EngineState>()(
           manualSleepAdjustment: state.manualSleepAdjustment,
           stressLevel: state.stressLevel,
           manualSpO2: state.manualSpO2,
-          weeklyFitnessData: state.weeklyFitnessData
+          weeklyFitnessData: state.weeklyFitnessData,
+          iqModalDismissed: state.iqModalDismissed
       }), 
       onRehydrateStorage: () => (state) => {
         if (state) {

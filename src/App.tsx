@@ -20,7 +20,15 @@ import ProfileView from './components/Views/ProfileView';
 import { useState } from 'react';
 
 const App: React.FC = () => {
-  const { user, authLoading, setUser, activeView, hasCompletedAssessment } = useEngineStore();
+  const { 
+    user, 
+    authLoading, 
+    setUser, 
+    activeView, 
+    hasCompletedAssessment,
+    iqModalDismissed,
+    dismissIqModal
+  } = useEngineStore();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
@@ -44,7 +52,6 @@ const App: React.FC = () => {
     return <LoginScreen />;
   }
 
-  const { iqModalDismissed, dismissIqModal } = useEngineStore();
 
   // Dashboard de Usuario Autenticado
   return (

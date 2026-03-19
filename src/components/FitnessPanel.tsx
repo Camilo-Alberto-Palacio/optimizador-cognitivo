@@ -217,13 +217,13 @@ const FitnessPanel: React.FC = () => {
                                 <div className="p-3 bg-white rounded-2xl shadow-sm">
                                     <Moon size={20} className="text-indigo-500" />
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Calidad de Sueño</p>
                                     <div className="flex items-baseline gap-1">
                                         <p className={`text-2xl font-black ${getSleepColor(sleepHours)}`}>
                                             {sleepHours !== null ? `${sleepHours}h` : '--'}
                                         </p>
-                                        <span className="text-[10px] font-bold text-slate-400">
+                                        <span className="text-[9px] font-bold text-slate-400 truncate">
                                             {sleepHours !== null ? (sleepHours >= 7 ? '✓ Óptimo' : '⚠️ Insuficiente') : ''}
                                         </span>
                                     </div>
@@ -236,16 +236,54 @@ const FitnessPanel: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => updateManualSleep(0.5)}
-                                    className="w-10 h-10 rounded-xl bg-white border border-indigo-100 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center font-black text-xs shadow-sm"
+                                    className="w-10 h-10 rounded-xl bg-white border border-indigo-100 text-indigo-500 hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center font-black text-xs shadow-sm active:scale-90"
                                 >
                                     +0.5
                                 </button>
                                 <button 
                                     onClick={() => updateManualSleep(-0.5)}
-                                    className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center font-black text-xs shadow-sm"
+                                    className="w-10 h-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center font-black text-xs shadow-sm active:scale-90"
                                 >
                                     -0.5
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* SpO2 - Full Width Premium Controller */}
+                        <div className="col-span-2 bg-slate-900 rounded-[2.5rem] p-6 text-white border border-slate-800 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-3xl rounded-full translate-x-12 -translate-y-12" />
+                            <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                                <div className="flex items-center gap-4 w-full sm:w-auto">
+                                    <div className="p-3 bg-cyan-500/20 rounded-2xl border border-cyan-500/30 text-cyan-400">
+                                        <Activity size={24} strokeWidth={2.5} />
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Saturación Oxígeno</p>
+                                        <div className="flex items-baseline gap-2">
+                                            <p className="text-4xl font-black text-white tracking-tighter">
+                                                {currentSpO2 !== null ? `${currentSpO2}%` : '--'}
+                                            </p>
+                                            {manualSpO2[selectedDate] && (
+                                                <span className="text-[9px] font-black text-cyan-500 uppercase px-2 py-0.5 bg-cyan-500/10 rounded-lg border border-cyan-500/20">Manual</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 bg-slate-800/50 p-2 rounded-[1.5rem] border border-slate-700/50 w-full sm:w-auto justify-center">
+                                    <button 
+                                        onClick={() => updateManualSpO2((currentSpO2 || 98) - 1)}
+                                        className="flex-1 sm:flex-none w-20 sm:w-14 h-14 rounded-2xl bg-slate-700 text-white hover:bg-slate-600 transition-all flex items-center justify-center shadow-lg active:scale-90"
+                                    >
+                                        <span className="text-3xl font-light">-</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => updateManualSpO2((currentSpO2 || 98) + 1)}
+                                        className="flex-1 sm:flex-none w-20 sm:w-14 h-14 rounded-2xl bg-cyan-600 text-white hover:bg-cyan-500 transition-all flex items-center justify-center shadow-lg active:scale-90 shadow-cyan-900/20"
+                                    >
+                                        <span className="text-3xl font-light">+</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -289,24 +327,6 @@ const FitnessPanel: React.FC = () => {
                                 {restingHeartRate !== null ? `${restingHeartRate}` : '--'}
                                 <span className="text-[10px] lowercase ml-0.5">bpm</span>
                             </p>
-                        </div>
-
-                        {/* SpO2 */}
-                        <div className="bento-item bg-cyan-50/30 p-4 rounded-[1.5rem] border border-cyan-100/50">
-                            <div className="flex gap-2 justify-between items-start mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Activity size={14} className="text-cyan-500" />
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">SpO2</span>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => updateManualSpO2((currentSpO2 || 98) + 1)} className="text-[8px] font-black bg-white px-1 rounded-md border border-cyan-100">+</button>
-                                    <button onClick={() => updateManualSpO2((currentSpO2 || 98) - 1)} className="text-[8px] font-black bg-white px-1 rounded-md border-cyan-100">-</button>
-                                </div>
-                            </div>
-                            <p className={`text-xl font-black ${currentSpO2 !== null && currentSpO2 >= 95 ? 'text-cyan-600' : 'text-rose-600'}`}>
-                                {currentSpO2 !== null ? `${currentSpO2}%` : '--'}
-                            </p>
-                            {manualSpO2[selectedDate] && <span className="text-[8px] font-black text-cyan-500 uppercase">Manual</span>}
                         </div>
                     </div>
                 )}
