@@ -173,6 +173,7 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'happy_black', name: 'Happy Black D1 (4 galletas - 34g)', category: 'nutrition', effectK: -14, durationH: 3, toxicityScore: 2, macronutrients: { protein: 2, carbs: 22, fats: 7, calories: 159 } },
   { id: 'saltisimas_d1', name: 'Saltísimas D1 (Original - 4 galletas)', category: 'nutrition', effectK: -6, durationH: 3, toxicityScore: 1, macronutrients: { protein: 2, carbs: 18, fats: 4, calories: 110 } },
   { id: 'saltisimas_integrales_d1', name: 'Saltísimas Integrales D1 (4 galletas)', category: 'nutrition', effectK: -4, durationH: 3, toxicityScore: 1, macronutrients: { protein: 3, carbs: 17, fats: 3.5, calories: 105 } },
+  { id: 'chocolatina_jet', name: 'Chocolatina Jet (12g)', category: 'nutrition', effectK: -8, durationH: 2, toxicityScore: 1, macronutrients: { protein: 1, carbs: 7, fats: 4, calories: 70 } },
 
   // --- ALIMENTOS INFLAMATORIOS Y FACTORES NEGATIVOS ---
   { id: 'azucar_refinada', name: 'Azúcar Refinada / Dulces', category: 'nutrition', effectK: -12, durationH: 3, toxicityScore: 2 },
