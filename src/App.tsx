@@ -18,6 +18,7 @@ import HealthView from './components/Views/HealthView';
 import ProfileView from './components/Views/ProfileView';
 import { useState } from 'react';
 import { LogEvent } from './types';
+import ToastContainer from './components/ui/ToastContainer';
 
 const App: React.FC = () => {
   const { 
@@ -123,6 +124,7 @@ const App: React.FC = () => {
           />
         )}
       </Modal>
+      <ToastContainer />
     </div>
   );
 };

@@ -15,6 +15,12 @@ export const getTodayStr = (): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+export interface ToastNotification {
+    id: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+}
+
 interface EngineState {
   // Multi-day journal: keyed by 'YYYY-MM-DD'
   allLogs: Record<string, LogEvent[]>;
@@ -42,6 +48,11 @@ interface EngineState {
   stressLevel: Record<string, number>; // Nivel de estrés por 'YYYY-MM-DD' (1-10)
   manualSpO2: Record<string, number>; // Oxígeno manual por 'YYYY-MM-DD'
   iqModalDismissed: boolean;
+  // Notifications
+  notifications: ToastNotification[];
+  notify: (message: string, type?: 'success' | 'error' | 'info') => void;
+  dismissNotification: (id: string) => void;
+
   setFitToken: (token: string) => void;
   loadFitnessData: () => Promise<void>;
   loadWeeklyFitnessData: () => Promise<void>;
@@ -90,6 +101,22 @@ export const useEngineStore = create<EngineState>()(
       stressLevel: {},
       manualSpO2: {},
       iqModalDismissed: false,
+      notifications: [],
+
+      notify: (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+        const id = crypto.randomUUID();
+        set((state) => ({
+          notifications: [...state.notifications, { id, message, type }]
+        }));
+        // Auto-remove after 3 seconds
+        setTimeout(() => get().dismissNotification(id), 3000);
+      },
+
+      dismissNotification: (id: string) => {
+        set((state) => ({
+          notifications: state.notifications.filter(n => n.id !== id)
+        }));
+      },
 
       setFitToken: (token: string) => {
         set({ fitAccessToken: token });

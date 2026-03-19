@@ -10,7 +10,7 @@ interface SupplementSelectorProps {
 }
 
 const SupplementSelector: React.FC<SupplementSelectorProps> = ({ initialData, onComplete }) => {
-    const { favorites, addLog, updateLog, toggleFavorite } = useEngineStore();
+    const { favorites, addLog, updateLog, toggleFavorite, notify } = useEngineStore();
     
     // getCurrentTime helper 'HH:mm'
     const getCurrentTimeStr = () => {
@@ -30,8 +30,11 @@ const SupplementSelector: React.FC<SupplementSelectorProps> = ({ initialData, on
         if (selectedSuppId && selectedTime && selectedQuantity > 0) {
             if (initialData) {
                 updateLog(initialData.id, selectedSuppId, selectedTime, selectedQuantity, note || undefined);
+                notify("Cambios guardados con éxito", "success");
             } else {
                 addLog(selectedSuppId, selectedTime, selectedQuantity, note || undefined);
+                const supp = SUPPLEMENT_CATALOG.find(s => s.id === selectedSuppId);
+                notify(`Registrado: ${supp?.name || 'Evento'}`, "success");
             }
             
             if (onComplete) {
