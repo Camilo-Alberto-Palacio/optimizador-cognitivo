@@ -171,6 +171,8 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'galletas_dulces', name: 'Galletas Dulces (Festival/Noel)', category: 'nutrition', effectK: -16, durationH: 3, toxicityScore: 2, macronutrients: { protein: 2, carbs: 25, fats: 7, calories: 180 } },
   { id: 'wafer_noel', name: 'Wafer Noel (4 galletas - 24g)', category: 'nutrition', effectK: -10, durationH: 3, toxicityScore: 2, macronutrients: { protein: 1, carbs: 15, fats: 5, calories: 110 } },
   { id: 'happy_black', name: 'Happy Black D1 (4 galletas - 34g)', category: 'nutrition', effectK: -14, durationH: 3, toxicityScore: 2, macronutrients: { protein: 2, carbs: 22, fats: 7, calories: 159 } },
+  { id: 'saltisimas_d1', name: 'Saltísimas D1 (Original - 4 galletas)', category: 'nutrition', effectK: -6, durationH: 3, toxicityScore: 1, macronutrients: { protein: 2, carbs: 18, fats: 4, calories: 110 } },
+  { id: 'saltisimas_integrales_d1', name: 'Saltísimas Integrales D1 (4 galletas)', category: 'nutrition', effectK: -4, durationH: 3, toxicityScore: 1, macronutrients: { protein: 3, carbs: 17, fats: 3.5, calories: 105 } },
 
   // --- ALIMENTOS INFLAMATORIOS Y FACTORES NEGATIVOS ---
   { id: 'azucar_refinada', name: 'Azúcar Refinada / Dulces', category: 'nutrition', effectK: -12, durationH: 3, toxicityScore: 2 },
