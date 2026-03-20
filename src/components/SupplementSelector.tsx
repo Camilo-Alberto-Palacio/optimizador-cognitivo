@@ -68,10 +68,21 @@ const SupplementSelector: React.FC<SupplementSelectorProps> = ({ initialData, on
                     {initialData ? 'Los cambios han sido guardados correctamente en la nube.' : 'El evento ha sido registrado en tu bitácora diaria.'}
                 </p>
                 <button 
-                    onClick={onComplete}
-                    className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                    onClick={() => {
+                        if (onComplete) {
+                            onComplete();
+                        } else {
+                            // RESET FOR DESKTOP INLINE USE
+                            setIsSuccess(false);
+                            setSearchTerm('');
+                            setSelectedSuppId('');
+                            setNote('');
+                            setSelectedQuantity(1);
+                        }
+                    }}
+                    className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
-                    Continuar al Inicio <ArrowRight size={20} />
+                    {onComplete ? 'Continuar al Inicio' : 'Registrar Nuevo Evento'} <ArrowRight size={20} />
                 </button>
             </div>
         );
