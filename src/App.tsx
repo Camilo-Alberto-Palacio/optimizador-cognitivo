@@ -66,7 +66,7 @@ const App: React.FC = () => {
                 <BaselineSetupModal onClose={dismissIqModal} />
             )}
             
-            <DesktopSidebar />
+            <DesktopSidebar onOpenAddModal={() => setIsAddModalOpen(true)} />
             <div className="hidden lg:block w-64 flex-shrink-0" />
 
             <main className="flex-1 min-w-0 overflow-x-hidden pb-24 lg:pb-0">

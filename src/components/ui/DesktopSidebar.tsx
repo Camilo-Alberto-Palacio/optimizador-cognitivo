@@ -5,21 +5,27 @@ import {
     User, 
     LogOut, 
     Zap,
-    HeartPulse
+    HeartPulse,
+    Plus
 } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
 import { auth } from '../../services/firebase';
 
-const DesktopSidebar: React.FC = () => {
+interface DesktopSidebarProps {
+    onOpenAddModal: () => void;
+}
+
+const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ onOpenAddModal }) => {
     const { activeView, setActiveView, user, loadWeeklyFitnessData } = useEngineStore();
 
     const menuItems = [
-        { id: 'dashboard', label: 'Panel Diario', icon: LayoutDashboard, action: () => setActiveView('dashboard') },
-        { id: 'analytics', label: 'Tendencias Pro', icon: BarChart3, action: () => { 
+        { id: 'dashboard', label: 'Panel Diario (Hoy)', icon: LayoutDashboard, action: () => setActiveView('dashboard') },
+        { id: 'analytics', label: 'Tendencias (Pro)', icon: BarChart3, action: () => { 
             setActiveView('analytics'); 
             loadWeeklyFitnessData(); 
         }},
-        { id: 'health', label: 'Bio-Métricas', icon: HeartPulse, action: () => setActiveView('dashboard') }, // Por ahora redirige al dashboard
+        { id: 'health', label: 'Bio-Métricas (Salud)', icon: HeartPulse, action: () => setActiveView('health') },
+        { id: 'profile', label: 'Mi Perfil (Tú)', icon: User, action: () => setActiveView('profile') },
     ];
 
     return (
@@ -43,16 +49,27 @@ const DesktopSidebar: React.FC = () => {
                     <button
                         key={item.id}
                         onClick={item.action}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ${
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-black transition-all duration-300 ${
                             activeView === item.id 
-                            ? 'bg-indigo-50 text-indigo-600 shadow-sm' 
-                            : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 translate-x-1' 
+                            : 'text-slate-400 hover:bg-indigo-50 hover:text-indigo-500'
                         }`}
                     >
-                        <item.icon size={18} strokeWidth={2.5} />
+                        <item.icon size={18} strokeWidth={activeView === item.id ? 2.5 : 2} />
                         {item.label}
                     </button>
                 ))}
+
+                {/* Acción de Registro Rápido en Desktop */}
+                <div className="pt-6 mt-6 border-t border-slate-100">
+                    <button
+                        onClick={onOpenAddModal}
+                        className="w-full flex items-center justify-center gap-3 p-4 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 group"
+                    >
+                        <Plus size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+                        Registrar Bio
+                    </button>
+                </div>
             </nav>
 
             {/* User Profile & Actions */}
