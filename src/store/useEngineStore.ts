@@ -306,7 +306,22 @@ export const useEngineStore = create<EngineState>()(
       },
 
       setUser: async (user) => {
-        set({ user, authLoading: false });
+        // RESET ESTATAL PREVENTIVO - Aislamiento de Privacidad v9.1
+        set({ 
+          user, 
+          authLoading: false,
+          allLogs: {},
+          favorites: ['creatina_mono', 'mag_glicinato', 'cafe'],
+          baseIq: null,
+          hasCompletedAssessment: false,
+          manualSleepAdjustment: {},
+          stressLevel: {},
+          manualSpO2: {},
+          fitnessData: null,
+          weeklyFitnessData: {},
+          hasSeenTutorial: false 
+        });
+
         if (user) {
           try {
             const docRef = doc(db, 'users', user.uid);
@@ -339,14 +354,12 @@ export const useEngineStore = create<EngineState>()(
                 set({ allLogs: cloudAllLogs });
               } else if (cloudOldLogs && Array.isArray(cloudOldLogs) && cloudOldLogs.length > 0) {
                 // MIGRATION: convert legacy flat logs to allLogs map
-                // Use timestamp to determine each log's date; fall back to yesterday
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
                 const fallbackDate = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
                 const migratedAllLogs: Record<string, LogEvent[]> = {};
                 (cloudOldLogs as LogEvent[]).forEach((log) => {
-                  // Determine date from timestamp or fall back
                   let dateStr = fallbackDate;
                   if (log.timestamp) {
                     const d = new Date(log.timestamp);
@@ -357,13 +370,16 @@ export const useEngineStore = create<EngineState>()(
                 });
 
                 set({ allLogs: migratedAllLogs });
-                // Persist migrated structure to Firestore
                 setDoc(docRef, { allLogs: migratedAllLogs }, { merge: true })
                   .catch(err => console.error('Migration save error:', err));
               }
 
               if (cloudFavorites) {
                 set({ favorites: cloudFavorites });
+              }
+
+              if (data.hasSeenTutorial !== undefined) {
+                set({ hasSeenTutorial: data.hasSeenTutorial });
               }
 
               get().recalculate();
