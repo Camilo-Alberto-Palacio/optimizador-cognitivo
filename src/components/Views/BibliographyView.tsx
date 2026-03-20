@@ -9,6 +9,7 @@ const BibliographyView: React.FC = () => {
             authors: "Borbély, A. A.",
             year: 1982,
             journal: "Human Neurobiology, 1(3), 195–204",
+            url: "https://pubmed.ncbi.nlm.nih.gov/7154438/",
             description: "Fundamento del algoritmo Base vs Peak. Explica cómo la presión del sueño y los ritmos circadianos regulan el estado de alerta.",
             icon: Moon,
             color: "text-indigo-500",
@@ -20,6 +21,7 @@ const BibliographyView: React.FC = () => {
             authors: "Rahat, M., et al.",
             year: 2022,
             journal: "Frontiers in Psychology",
+            url: "https://www.frontiersin.org/articles/10.3389/fpsyg.2022.842751/full",
             description: "Valida científicamente que los pasos, el sueño y la variabilidad cardiaca (HRV) predicen con precisión las funciones ejecutivas.",
             icon: Activity,
             color: "text-emerald-500",
@@ -31,6 +33,7 @@ const BibliographyView: React.FC = () => {
             authors: "Hillman, C. H., Erickson, K. I., & Kramer, A. F.",
             year: 2008,
             journal: "Nature Reviews Neuroscience, 9(1), 58-65",
+            url: "https://www.nature.com/articles/nrn2298",
             description: "Demuestra cómo el fitness aeróbico aumenta el volumen cerebral y mejora los procesos de atención y control inhibitorio.",
             icon: Footprints,
             color: "text-rose-500",
@@ -42,6 +45,7 @@ const BibliographyView: React.FC = () => {
             authors: "Malík, M., & Tlustoš, P.",
             year: 2022,
             journal: "Nutrients, 14(16), 3367",
+            url: "https://www.mdpi.com/2072-6643/14/16/3367",
             description: "Revisión sistemática sobre la eficacia biológica de cafeína, L-teanina y otros optimizadores incluidos en el catálogo.",
             icon: Zap,
             color: "text-amber-500",
@@ -53,6 +57,7 @@ const BibliographyView: React.FC = () => {
             authors: "Zhu, Y., et al.",
             year: 2022,
             journal: "Frontiers in Neurology, 13, 831614",
+            url: "https://www.frontiersin.org/articles/10.3389/fneur.2022.831614/full",
             description: "Evidencia la degradación inmediata de la velocidad de procesamiento mental ante caídas leves en la saturación de oxígeno.",
             icon: Brain,
             color: "text-cyan-500",
@@ -96,9 +101,14 @@ const BibliographyView: React.FC = () => {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <button className="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors">
+                            <a 
+                                href={ref.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:text-indigo-700 transition-colors"
+                            >
                                 Ver Estudio <ExternalLink size={12} />
-                            </button>
+                            </a>
                         </div>
                     </div>
                 ))}
