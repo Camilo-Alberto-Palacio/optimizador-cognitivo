@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronRight, Zap, Target, BookOpen, CheckCircle, Sparkles } from 'lucide-react';
+import { X, ChevronRight, Zap, Target, BookOpen, Sparkles } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
 
 const OnboardingTutorial: React.FC = () => {
