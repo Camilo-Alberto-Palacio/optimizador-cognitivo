@@ -70,11 +70,21 @@ const AnalyticsDashboard: React.FC = () => {
                                 />
                                 <Line 
                                     type="monotone" 
+                                    dataKey="baseCi" 
+                                    stroke="#94a3b8" 
+                                    strokeWidth={2} 
+                                    strokeDasharray="5 5"
+                                    dot={false}
+                                    name="CI Base (Biológico)"
+                                />
+                                <Line 
+                                    type="monotone" 
                                     dataKey="peakIq" 
                                     stroke="#6366f1" 
                                     strokeWidth={4} 
                                     dot={{ fill: '#6366f1', strokeWidth: 2, r: 4, stroke: '#fff' }}
                                     activeDot={{ r: 6, strokeWidth: 0 }}
+                                    name="CI Pico (Optimizado)"
                                 />
                             </LineChart>
                         </ResponsiveContainer>

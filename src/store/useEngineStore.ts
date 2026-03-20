@@ -86,7 +86,7 @@ interface EngineState {
   recalculate: () => void;
   // Derived helpers
   getLogsForDate: (date: string) => LogEvent[];
-  getHistoricalSeries: (days?: number) => { date: string; ci: number; sleep: number; steps: number; supplements: Record<string, number> }[];
+  getHistoricalSeries: (days?: number) => { date: string; ci: number; baseCi: number; sleep: number; steps: number; supplements: Record<string, number> }[];
 }
 
 export const useEngineStore = create<EngineState>()(
@@ -277,7 +277,7 @@ export const useEngineStore = create<EngineState>()(
       getHistoricalSeries: (days: number = 7) => {
         const { allLogs, baseIq, weeklyFitnessData, manualSleepAdjustment, stressLevel, manualSpO2 } = get();
         const staticBaseIq = baseIq || 133;
-        const series: { date: string; ci: number; sleep: number; steps: number; supplements: Record<string, number> }[] = [];
+        const series: { date: string; ci: number; baseCi: number; sleep: number; steps: number; supplements: Record<string, number> }[] = [];
         
         const today = new Date();
         for (let i = 0; i < days; i++) {
@@ -327,6 +327,7 @@ export const useEngineStore = create<EngineState>()(
           series.push({
             date: dStr,
             ci: peakCi,
+            baseCi: effectiveBaseIq, // v10.2: Reportar la base para comparar con el pico
             sleep: adjustedFitness.sleepHours || 0,
             steps: fit.steps || 0,
             supplements: supplementCounts
