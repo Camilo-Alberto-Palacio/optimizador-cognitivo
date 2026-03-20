@@ -4,7 +4,8 @@ import { TrendingUp, Calendar, Zap } from 'lucide-react';
 import { useEngineStore } from '../../store/useEngineStore';
 
 const AnalyticsDashboard: React.FC = () => {
-    const { getHistoricalSeries } = useEngineStore();
+    const { getHistoricalSeries, allLogs, weeklyFitnessData, manualSleepAdjustment, stressLevel, manualSpO2, baseIq } = useEngineStore();
+    
     const weeklyTrends = useMemo(() => {
         const series = getHistoricalSeries(7);
         return series.map(s => {
@@ -17,7 +18,7 @@ const AnalyticsDashboard: React.FC = () => {
                 logsCount: Object.values(s.supplements).reduce((a, b) => a + b, 0)
             };
         });
-    }, [getHistoricalSeries]);
+    }, [getHistoricalSeries, allLogs, weeklyFitnessData, manualSleepAdjustment, stressLevel, manualSpO2, baseIq]);
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in duration-500">

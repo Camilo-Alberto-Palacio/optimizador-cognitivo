@@ -275,7 +275,7 @@ export const useEngineStore = create<EngineState>()(
        * Extractor de series temporales para analítica
        */
       getHistoricalSeries: (days: number = 7) => {
-        const { allLogs, baseIq, weeklyFitnessData, manualSleepAdjustment } = get();
+        const { allLogs, baseIq, weeklyFitnessData, manualSleepAdjustment, stressLevel, manualSpO2 } = get();
         const staticBaseIq = baseIq || 133;
         const series: { date: string; ci: number; sleep: number; steps: number; supplements: Record<string, number> }[] = [];
         
@@ -286,19 +286,34 @@ export const useEngineStore = create<EngineState>()(
           const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
           
           const logs = allLogs[dStr] || [];
-          const fit = weeklyFitnessData[dStr] || { sleepHours: null, steps: null };
+          const fit = weeklyFitnessData[dStr] || { sleepHours: null, steps: null, restingHeartRate: null, activeCalories: null, spo2: null, lastFetched: null };
+          
+          // --- CÁLCULO DE EEFFECTIVE BASE IQ PARA ESTE DÍA ESPECÍFICO ---
+          let effectiveBaseIq = staticBaseIq;
+
+          // 1. IMPACTO DEL ESTRÉS (MANUAL) - v10.0 fix
+          const currentStress = stressLevel[dStr] || 1;
+          if (currentStress >= 4) {
+            const stressPenalty = currentStress < 7 ? (currentStress - 3) * 3 : 10 + (currentStress - 6) * 5;
+            effectiveBaseIq -= stressPenalty;
+          }
+
+          // 2. AJUSTES DE FITNESS Y MANUALES
+          const adj = Number(manualSleepAdjustment[dStr] || 0);
+          const rawSleep = fit.sleepHours !== null ? Number(fit.sleepHours) : null;
+          const manualOxy = manualSpO2[dStr] || null;
+
+          const adjustedFitness: FitnessData = {
+            ...fit,
+            sleepHours: rawSleep !== null ? Math.max(0, rawSleep + adj) : (adj > 0 ? adj : null),
+            spo2: manualOxy || fit.spo2
+          };
+          
+          effectiveBaseIq = calculateFitnessImpact(adjustedFitness, effectiveBaseIq);
           
           // Calcular CI Pico para ese día
-          const adj = Number(manualSleepAdjustment[dStr] || 0);
-          // Importante: No usar toISOString para evitar desfase UTC
-          const rawSleep = fit.sleepHours !== null ? Number(fit.sleepHours) : null;
-          const adjustedFitness = {
-            ...fit,
-            sleepHours: rawSleep !== null ? Math.max(0, rawSleep + adj) : (adj > 0 ? adj : null)
-          };
-          const effectiveBaseIq = calculateFitnessImpact(adjustedFitness as any, staticBaseIq);
           const dailyChart = MathEngine.calculateDailyPerformance(logs, effectiveBaseIq, staticBaseIq);
-          const peakCi = Math.max(...dailyChart.map(p => p.iq), staticBaseIq);
+          const peakCi = dailyChart.length > 0 ? Math.max(...dailyChart.map(p => p.iq)) : effectiveBaseIq;
 
           // Contar suplementos únicos ese día
           const supplementCounts: Record<string, number> = {};
