@@ -88,9 +88,11 @@ const SupplementSelector: React.FC<SupplementSelectorProps> = ({ initialData, on
         );
     }
 
+    const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
     const filteredSupplements = SUPPLEMENT_CATALOG.filter(s => 
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        s.category.toLowerCase().includes(searchTerm.toLowerCase())
+        normalize(s.name).includes(normalize(searchTerm)) || 
+        normalize(s.category).includes(normalize(searchTerm))
     );
 
     const categoryLabels: Record<string, string> = {
