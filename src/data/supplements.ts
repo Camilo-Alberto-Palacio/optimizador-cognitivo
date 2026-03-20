@@ -101,6 +101,7 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'apigenina', name: 'Apigenina', category: 'adaptation', effectK: 4, durationH: 6 },
   { id: 'valeriana', name: 'Raíz de Valeriana', category: 'adaptation', effectK: 3, durationH: 6 },
   { id: 'manzanilla', name: 'Té de Manzanilla', category: 'adaptation', effectK: 2, durationH: 3 },
+  { id: 'aromatica', name: 'Aromática (Infusión de Hierbas)', category: 'adaptation', effectK: 2, durationH: 2 },
   { id: 'pasionaria', name: 'Pasionaria (Passiflora)', category: 'adaptation', effectK: 3, durationH: 4 },
   { id: 'melatonina', name: 'Melatonina (Noche)', category: 'adaptation', effectK: 5, durationH: 6 },
 
