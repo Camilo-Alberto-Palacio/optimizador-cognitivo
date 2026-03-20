@@ -8,7 +8,7 @@ function parseTimeStr(timeStr: string): number {
 
 const MathEngine = {
     calculateDailyPerformance(logs: LogEvent[], effectiveBaseIq: number = 133, staticBaseIq: number = 133): ChartDataPoint[] {
-        const peakLimitIq = effectiveBaseIq + 12; 
+        const peakLimitIq = effectiveBaseIq + 22; // v10.1 PRO: Aumentado de 12 a 22 para mayor sensibilidad
         const points: ChartDataPoint[] = [];
 
         // Filtrar logs ocultos antes de procesar

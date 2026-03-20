@@ -313,7 +313,10 @@ export const useEngineStore = create<EngineState>()(
           
           // Calcular CI Pico para ese día
           const dailyChart = MathEngine.calculateDailyPerformance(logs, effectiveBaseIq, staticBaseIq);
-          const peakCi = dailyChart.length > 0 ? Math.max(...dailyChart.map(p => p.iq)) : effectiveBaseIq;
+          const maxIq = dailyChart.length > 0 ? Math.max(...dailyChart.map(p => p.iq)) : effectiveBaseIq;
+          
+          // Si no hay logs, el pico es la base efectiva fija para evitar "ruido" circadiano en la gráfica de tendencias
+          const peakCi = logs.length > 0 ? maxIq : effectiveBaseIq;
 
           // Contar suplementos únicos ese día
           const supplementCounts: Record<string, number> = {};
