@@ -48,6 +48,8 @@ interface EngineState {
   stressLevel: Record<string, number>; // Nivel de estrés por 'YYYY-MM-DD' (1-10)
   manualSpO2: Record<string, number>; // Oxígeno manual por 'YYYY-MM-DD'
   iqModalDismissed: boolean;
+  userProfile: 'general' | 'student' | 'athlete' | 'executive' | 'developer' | 'elderly';
+  setUserProfile: (profile: 'general' | 'student' | 'athlete' | 'executive' | 'developer' | 'elderly') => void;
   // Notifications
   notifications: ToastNotification[];
   notify: (message: string, type?: 'success' | 'error' | 'info') => void;
@@ -112,11 +114,21 @@ export const useEngineStore = create<EngineState>()(
       stressLevel: {},
       manualSpO2: {},
       iqModalDismissed: false,
+      userProfile: 'general',
       notifications: [],
       hasSeenTutorial: false,
       accessibility: {
         highContrast: false,
         fontSize: 'normal'
+      },
+
+      setUserProfile: (profile) => {
+        set({ userProfile: profile });
+        const { user } = get();
+        if (user) {
+          setDoc(doc(db, 'users', user.uid), { userProfile: profile }, { merge: true })
+            .catch(err => console.error("Error saving profile to cloud:", err));
+        }
       },
 
       setHasSeenTutorial: (val) => set({ hasSeenTutorial: val }),
@@ -332,7 +344,12 @@ export const useEngineStore = create<EngineState>()(
               const cloudOldLogs = data.logs; // Legacy flat array
               const cloudFavorites = data.favorites;
               const cloudBaseIq = data.baseIq;
+              const cloudUserProfile = data.userProfile;
               
+              if (cloudUserProfile) {
+                set({ userProfile: cloudUserProfile });
+              }
+
               if (cloudBaseIq !== undefined) {
                   set({ baseIq: cloudBaseIq, hasCompletedAssessment: cloudBaseIq !== null });
               }
@@ -570,7 +587,8 @@ export const useEngineStore = create<EngineState>()(
           weeklyFitnessData: state.weeklyFitnessData,
           iqModalDismissed: state.iqModalDismissed,
           hasSeenTutorial: state.hasSeenTutorial,
-          accessibility: state.accessibility
+          accessibility: state.accessibility,
+          userProfile: state.userProfile
       }), 
       onRehydrateStorage: () => (state) => {
         if (state) {
