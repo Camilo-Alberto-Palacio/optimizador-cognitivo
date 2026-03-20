@@ -155,6 +155,7 @@ export const SUPPLEMENT_CATALOG: SupplementDef[] = [
   { id: 'carne_cerdo', name: 'Carne de Cerdo (100g)', category: 'nutrition', effectK: 3, durationH: 12, macronutrients: { protein: 21, carbs: 0, fats: 10, calories: 180 } },
   { id: 'chicharron', name: 'Chicharrón (100g)', category: 'nutrition', effectK: -4, durationH: 8, toxicityScore: 1, macronutrients: { protein: 15, carbs: 0, fats: 35, calories: 400 } },
   { id: 'arepa_maiz', name: 'Arepa de Maíz (1 u)', category: 'nutrition', effectK: 4, durationH: 4, macronutrients: { protein: 2, carbs: 32, fats: 1, calories: 150 } },
+  { id: 'arepa_huevo', name: 'Arepa de Huevo (1 u)', category: 'nutrition', effectK: 5, durationH: 5, macronutrients: { protein: 7, carbs: 35, fats: 14, calories: 290 } },
   { id: 'papa_criolla', name: 'Papa Criolla / Blanca (2 u)', category: 'nutrition', effectK: 3, durationH: 3, macronutrients: { protein: 2, carbs: 20, fats: 0, calories: 90 } },
   { id: 'yuca_cocida', name: 'Yuca Cocida (100g)', category: 'nutrition', effectK: 4, durationH: 5, macronutrients: { protein: 1, carbs: 38, fats: 0, calories: 160 } },
   { id: 'patacon', name: 'Patacón / Plátano Frito (1 u)', category: 'nutrition', effectK: -2, durationH: 4, macronutrients: { protein: 1, carbs: 30, fats: 8, calories: 200 } },
