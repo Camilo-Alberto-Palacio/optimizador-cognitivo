@@ -53,6 +53,15 @@ Quantum se basa en evidencia académica rigurosa:
 
 ---
 
+## 📂 Casos de Uso Reales
+Para entender cómo aplicar el biohacking en situaciones críticas, consulta nuestra [**Guía de Escenarios de Optimización**](casos_de_uso/README.md), que incluye:
+- **Éxito Académico:** Estudiantes en finales.
+- **Rendimiento Corporativo:** Ejecutivos con Jet Lag.
+- **Estado de Flow:** Programadores y Creativos.
+- **Longevidad:** Salud cognitiva en adultos mayores.
+
+---
+
 ## 🛠️ Tecnologías
 - **Front-end:** React 18 + Tailwind CSS (Glassmorphism).
 - **Estado:** Zustand v5 (Persistencia nativa).
